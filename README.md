@@ -1,5 +1,4 @@
-NET 6
------
-![logo](Datagrams.Images/NewDatagramsLogo.png)
+
+![logo](Datagrams.Images/NewDatagramsLogo.png =550x200)
 
 ## Coming soon...

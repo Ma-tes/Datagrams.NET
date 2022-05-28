@@ -1,4 +1,4 @@
 
-![logo](Datagrams.Images/NewDatagramsLogo.png =550x200)
+![logo](Datagrams.Images/NewDatagramsLogo.png|width=200px)
 
 ## Coming soon...

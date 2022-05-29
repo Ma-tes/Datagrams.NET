@@ -1,4 +1,4 @@
 
-![logo](Datagrams.Images/NewDatagramsLogo.png)
+![logo](Datagrams.Images/BackgroundDatagramsLogo.png)
 
 ## Coming soon...

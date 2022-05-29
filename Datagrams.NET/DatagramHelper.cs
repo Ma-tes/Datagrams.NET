@@ -8,13 +8,13 @@ namespace DatagramsNet
     {
         private static MethodInfo read = typeof(BinaryHelper).GetMethod(nameof(BinaryHelper.Read));
 
-        public static async Task SendDatagramAsync(Func<byte[], Task> sendAction, List<byte[]> data) 
+        public static async Task SendDatagramAsync(Func<byte[], Task> sendAction, ReadOnlyMemory<byte[]> data) 
         {
             var newSubData = Task.Run(() => new DatagramIdentificator(data).SerializeDatagram());
             await sendAction(newSubData.Result.ToArray());
         }
 
-        public static List<byte[]> WriteDatagram<T>(T datagram) where T : IDatagram 
+        public static Memory<byte[]> WriteDatagram<T>(T datagram) where T : IDatagram 
         {
             var datagramList = new List<byte[]>();
             var customProperties = datagram.GetType().GetFields();
@@ -29,28 +29,28 @@ namespace DatagramsNet
                     datagramList.Add(_binaryHelper.MemoryHolder);
                 }
             }
-            return datagramList;
+            return datagramList.ToArray();
         }
 
-        public static object ReadDatagram(List<byte[]> datagram)
+        public static object ReadDatagram(Memory<byte[]> datagram)
         {
             int datagramId;
             Type datagramType;
-            using (var idReader = new BinaryHelper(datagram[0])) 
+            using (var idReader = new BinaryHelper(datagram.Span[0])) 
             {
                 datagramId = idReader.Read<int>();
                 datagramType = GetBaseDatagramType(datagramId, typeof(PacketAttribute));
             }
-            return SetDatagramData(datagramType, datagram);;
+            return SetDatagramData(datagramType, datagram);
         }
 
-        private static object SetDatagramData(Type datagramType, List<byte[]> data) 
+        private static object SetDatagramData(Type datagramType, Memory<byte[]> data) 
         {
             var datagram = (Activator.CreateInstance(datagramType));
             FieldInfo[] fields = datagram.GetType().GetFields();
-            for (int i = 1; i < data.Count; i++)
+            for (int i = 1; i < data.Length; i++)
             {
-                using (var reader = new BinaryHelper(data[i])) 
+                using (var reader = new BinaryHelper(data.Span[i])) 
                 {
                     Type fieldType = fields[i].FieldType;
                     var fieldValue = read.MakeGenericMethod(fieldType).Invoke(reader, Array.Empty<object>());

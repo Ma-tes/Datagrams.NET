@@ -34,8 +34,11 @@ namespace DatagramsNet
             }
 
             Span<byte> newData = new Span<byte>(data);
+            Memory<byte[]> memory = new Memory<byte[]>();
             newData = newData.Slice(4, data.Length - 4);
-            object idData = DatagramHelper.ReadDatagram(new List<byte[]>() { newData.ToArray() });
+            memory.Span.Fill(newData.ToArray());
+
+            object idData = DatagramHelper.ReadDatagram(memory);
             var finalizedObject = pendingsDatagrams.FirstOrDefault(d => d.bytes.Count == d.FieldCount);
 
             if (finalizedObject.FieldCount > 0 && finalizedObject.FieldCount == finalizedObject.bytes.Count) 

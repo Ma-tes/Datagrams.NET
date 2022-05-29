@@ -23,17 +23,16 @@ namespace DatagramsNet
         public async Task<bool> StartRecievingAsync(Func<object, Task> datagramAction)
         {
             List<byte[]> recievedDatagram = new();
-            var indetificator = new DatagramIdentificator(recievedDatagram);
             await Task.Run(() => ServerLogger.StartConsoleWriter());
             while (true) 
             {
                 var data = await GetDatagramDataAsync();
                 Type dataType = DatagramHelper.GetBaseDatagramType(data.Datagram[0], typeof(PacketAttribute));
-                var newData = indetificator.DeserializeDatagram(data.Datagram, GetSubBytesLength(dataType).ToArray());
+                var newData = DatagramIdentificator.DeserializeDatagram(data.Datagram, GetSubBytesLength(dataType).ToArray());
 
                 if (newData is not null)
                 {
-                    object datagram = DatagramHelper.ReadDatagram(newData.ToList());
+                    object datagram = DatagramHelper.ReadDatagram(newData.ToArray().AsMemory());
                     if (datagram is not null) 
                     {
                         await datagramAction(datagram);

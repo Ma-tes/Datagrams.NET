@@ -4,26 +4,29 @@ namespace DatagramsNet
 
     internal sealed class DatagramIdentificator
     {
-        private List<byte[]> datagramData;
+        public ReadOnlyMemory<byte[]> DatagramData { get; set; }
 
-        public DatagramIdentificator(List<byte[]> binaryData) 
+        public DatagramIdentificator() { }
+
+        public DatagramIdentificator(ReadOnlyMemory<byte[]> binaryData) 
         {
-            datagramData = binaryData; 
+            DatagramData = binaryData; 
         }
 
         public IEnumerable<byte> SerializeDatagram() 
         {
-            for (int i = 0; i < datagramData.Count; i++)
+            var bytes = new Memory<byte>();
+            for (int i = 0; i < DatagramData.Length; i++)
             {
-                for (int j = 0; j < datagramData[i].Length; j++)
+                for (int j = 0; j < DatagramData.Span[i].Length; j++)
                 {
-                    var data = datagramData[i][j];
+                    var data = DatagramData.Span[i][j];
                     yield return data;
                 }
             }
         }
 
-        public IEnumerable<byte[]> DeserializeDatagram(byte[] subData, int[] subBytesLength) 
+        public static IEnumerable<byte[]> DeserializeDatagram(byte[] subData, int[] subBytesLength) 
         {
             Memory<byte> bytes = subData;
             int lastIndex = 0;

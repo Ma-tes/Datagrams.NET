@@ -25,7 +25,7 @@ namespace DatagramsNet
             }
         }
 
-        private async Task CheckConnection(string message = "Client is connected") 
+        protected virtual async Task CheckConnection(string message = "Client is connected") 
         {
             var handShakePacket = new HandShakePacket(new ShakeMessage() {IdMessage = 17, Message = message.ToCharArray() });
             var writer = DatagramHelper.WriteDatagram(handShakePacket);

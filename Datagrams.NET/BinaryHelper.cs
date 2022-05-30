@@ -1,4 +1,5 @@
 ﻿using DatagramsNet.Datagrams.NET.Prefixes;
+using DatagramsNet.NET.Logger;
 using System.Runtime.InteropServices;
 
 namespace DatagramsNet
@@ -9,7 +10,7 @@ namespace DatagramsNet
 
         private IntPtr @objectPointer;
 
-        private object BinaryObject;
+        private object binaryObject;
 
         public BinaryHelper(byte[] data) 
         {
@@ -21,14 +22,14 @@ namespace DatagramsNet
 
         public BinaryHelper(object @object) 
         {
-            BinaryObject = @object;
+            binaryObject = @object;
             MemoryHolder = new byte[Marshal.SizeOf(@object)];
             @objectPointer = GetIntPtr();
         }
 
         public bool Write() 
         {
-            Marshal.StructureToPtr(BinaryObject, @objectPointer, false);
+            Marshal.StructureToPtr(binaryObject, @objectPointer, false);
             Marshal.Copy(@objectPointer, MemoryHolder, 0, MemoryHolder.Length);
             return MemoryHolder[0] != 0;
         }

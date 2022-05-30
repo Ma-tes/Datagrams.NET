@@ -2,6 +2,7 @@
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using DatagramsNet.Attributes;
+using DatagramsNet.NET.Logger;
 
 namespace DatagramsNet
 {
@@ -9,11 +10,7 @@ namespace DatagramsNet
     {
         private Socket _listeningSocket;
 
-        protected override TimeSpan datagramHoldTime => TimeSpan.FromMinutes(1);
-
-        protected override int maxDatagramId => 255;
-
-        public IPEndPoint EndPoint { get; init; }
+        protected override TimeSpan datagramHoldTime => TimeSpan.FromMinutes(1); //TODO: Creates better use case
 
         public UdpReciever(Socket listeningSocket) 
         {

@@ -2,7 +2,7 @@
 using DatagramsNet.Interfaces;
 using System.Collections.Concurrent;
 
-namespace DatagramsNet
+namespace DatagramsNet.NET.Logger
 {
     [Flags]
     public enum TimeFormat

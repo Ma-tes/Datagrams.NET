@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using DatagramsNet;
 using DatagramsNet.Datagrams.NET.Prefixes;
+using DatagramsNet.NET.Logger;
 
 namespace Datagrams.NET.Examples.Server
 {

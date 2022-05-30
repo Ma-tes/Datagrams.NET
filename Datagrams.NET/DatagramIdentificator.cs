@@ -15,7 +15,6 @@ namespace DatagramsNet
 
         public IEnumerable<byte> SerializeDatagram() 
         {
-            var bytes = new Memory<byte>();
             for (int i = 0; i < DatagramData.Length; i++)
             {
                 for (int j = 0; j < DatagramData.Span[i].Length; j++)

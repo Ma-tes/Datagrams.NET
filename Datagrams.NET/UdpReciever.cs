@@ -17,10 +17,11 @@ namespace DatagramsNet
             _listeningSocket = listeningSocket;
         }
 
-        public async Task<bool> StartRecievingAsync(Func<object, Task> datagramAction)
+        public async Task<bool> StartRecievingAsync(Func<object, IPAddress, Task> datagramAction, bool consoleWriter = true)
         {
             List<byte[]> recievedDatagram = new();
-            await Task.Run(() => ServerLogger.StartConsoleWriter());
+            if(consoleWriter)
+                await Task.Run(() => ServerLogger.StartConsoleWriter());
             while (true) 
             {
                 var data = await GetDatagramDataAsync();
@@ -32,7 +33,7 @@ namespace DatagramsNet
                     object datagram = DatagramHelper.ReadDatagram(newData.ToArray().AsMemory());
                     if (datagram is not null) 
                     {
-                        await datagramAction(datagram);
+                        await datagramAction(datagram, data.Client.Address);
                     }
                     CurrentData = null;
                 }

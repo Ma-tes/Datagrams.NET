@@ -13,7 +13,7 @@ namespace Datagrams.NET.Examples.Server
 
         public int handShakeCounter = 0;
 
-        public override async Task OnRecieveAsync(object datagram) 
+        public override async Task OnRecieveAsync(object datagram, IPAddress ipAddress) 
         {
             if (datagram is HandShakePacket newDatagram)
             {

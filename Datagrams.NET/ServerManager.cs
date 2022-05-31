@@ -30,7 +30,7 @@ namespace DatagramsNet
 
         public UdpReciever UdpReciever { get; set; }
 
-        public virtual async Task OnRecieveAsync(object datagram) { }
+        public virtual async Task OnRecieveAsync(object datagram, IPAddress ipAddress) { }
 
         public ServerManager(string name, IPAddress ipAddress) 
         {

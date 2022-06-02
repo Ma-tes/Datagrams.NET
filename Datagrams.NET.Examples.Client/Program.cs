@@ -11,7 +11,7 @@ namespace Datagrams.NET.Examples.Clients
         {
             string ipAddress = Console.ReadLine();
             client = new Client("TestClient", IPAddress.Parse(ipAddress), 1111);
-            int datagramCount = 100000;
+            int datagramCount = 100;
             var sendDatagrams = new List<Task>();
             for (int i = 0; i < datagramCount; i++)
             {

@@ -4,7 +4,7 @@ using DatagramsNet.Interfaces;
 
 namespace DatagramsNet
 {
-    struct ClientDatagram 
+    public struct ClientDatagram 
     {
         public IPEndPoint Client { get; set; }
 
@@ -30,7 +30,11 @@ namespace DatagramsNet
 
         public UdpReciever UdpReciever { get; set; }
 
-        public virtual async Task OnRecieveAsync(object datagram, IPAddress ipAddress) { }
+        public virtual async Task OnRecieveAsync(object datagram, EndPoint ipAddress) { }
+
+        protected virtual async Task<ClientDatagram> StartRecieving() { return await UdpReciever.GetDatagramDataAsync(); }
+
+        public ServerManager(Socket serverSocket) => UdpReciever = new UdpReciever(serverSocket);
 
         public ServerManager(string name, IPAddress ipAddress) 
         {
@@ -46,7 +50,7 @@ namespace DatagramsNet
 
         public async Task<bool> StartServer() 
         {
-            await UdpReciever.StartRecievingAsync(OnRecieveAsync);
+            await UdpReciever.StartRecievingAsync(OnRecieveAsync, StartRecieving);
             return await Task.FromResult(false);
         }
     }

@@ -6,6 +6,7 @@ using DatagramsNet.NET.Logger;
 
 namespace DatagramsNet
 {
+
     public sealed class UdpReciever : DatagramHolder
     {
         private Socket _listeningSocket;
@@ -17,14 +18,14 @@ namespace DatagramsNet
             _listeningSocket = listeningSocket;
         }
 
-        public async Task<bool> StartRecievingAsync(Func<object, IPAddress, Task> datagramAction, bool consoleWriter = true)
+        public async Task<bool> StartRecievingAsync(Func<object, EndPoint, Task> datagramAction, Func<Task<ClientDatagram>> clientData, bool consoleWriter = true)
         {
             List<byte[]> recievedDatagram = new();
             if(consoleWriter)
                 await Task.Run(() => ServerLogger.StartConsoleWriter());
             while (true) 
             {
-                var data = await GetDatagramDataAsync();
+                var data = await clientData();
                 Type dataType = DatagramHelper.GetBaseDatagramType(data.Datagram[0], typeof(PacketAttribute));
                 var newData = DatagramIdentificator.DeserializeDatagram(data.Datagram, GetSubBytesLength(dataType).ToArray());
 
@@ -33,7 +34,7 @@ namespace DatagramsNet
                     object datagram = DatagramHelper.ReadDatagram(newData.ToArray().AsMemory());
                     if (datagram is not null) 
                     {
-                        await datagramAction(datagram, data.Client.Address);
+                        await datagramAction(datagram, data.Client);
                     }
                     CurrentData = null;
                 }
@@ -50,7 +51,7 @@ namespace DatagramsNet
             }
         }
 
-        private async Task<ClientDatagram> GetDatagramDataAsync() 
+        public async Task<ClientDatagram> GetDatagramDataAsync() 
         {
             Memory<byte> datagramMemory = new byte[4096];
             EndPoint currentEndPoint = (EndPoint)new IPEndPoint(IPAddress.Any, 0);

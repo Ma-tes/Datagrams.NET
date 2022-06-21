@@ -1,8 +1,7 @@
-﻿using DatagramsNet.Datagrams.NET.Logger;
-using DatagramsNet.Interfaces;
+﻿using DatagramsNet.Interfaces;
 using System.Collections.Concurrent;
 
-namespace DatagramsNet.NET.Logger
+namespace DatagramsNet.Datagrams.NET.Logger
 {
     [Flags]
     public enum TimeFormat
@@ -22,33 +21,36 @@ namespace DatagramsNet.NET.Logger
         {
             var prefix = await GetPrefix<TSource>();
             var dateTime = await GetDateText(timeFormat);
-            lock (queueMessages) 
+            lock (queueMessages)
             {
                 queueMessages.Enqueue(new Message() { SingleMessage = $"<{dateTime}> {message}", Prefix = prefix });
             }
             await Task.Delay(delay);
         }
 
-        public static void StartConsoleWriter() 
+        public static void StartConsoleWriter()
         {
-            Task.Run(async() => { while (true) 
+            Task.Run(async () =>
             {
-                if (queueMessages.Count != 0) 
+                while (true)
                 {
+                    if (queueMessages.Count != 0)
+                    {
 
-                    Message newMessage = new Message();
-                    queueMessages.TryDequeue(out newMessage);
-                    if(newMessage.Prefix is not null)
-                        await newMessage.Prefix.WritePrefixAsync();
-                    await Console.Out.WriteLineAsync(newMessage.SingleMessage);
+                        Message newMessage = new Message();
+                        queueMessages.TryDequeue(out newMessage);
+                        if (newMessage.Prefix is not null)
+                            await newMessage.Prefix.WritePrefixAsync();
+                        await Console.Out.WriteLineAsync(newMessage.SingleMessage);
+                    }
                 }
-            }});
+            });
         }
 
-        private static Task<string> GetDateText(TimeFormat timeFormat) 
+        private static Task<string> GetDateText(TimeFormat timeFormat)
         {
             if (timeFormat == TimeFormat.NONE)
-                return Task.FromResult(String.Empty);
+                return Task.FromResult(string.Empty);
             return timeFormat == TimeFormat.HALF ? Task.FromResult(DateTime.Now.ToShortTimeString()) : Task.FromResult(DateTime.Now.ToLongTimeString());
         }
 

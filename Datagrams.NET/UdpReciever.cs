@@ -2,7 +2,8 @@
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using DatagramsNet.Attributes;
-using DatagramsNet.NET.Logger;
+using DatagramsNet.Datagrams.NET.Logger;
+using DatagramsNet.Datagrams.NET.Logger.Reader;
 
 namespace DatagramsNet
 {
@@ -21,8 +22,11 @@ namespace DatagramsNet
         public async Task<bool> StartRecievingAsync(Func<object, EndPoint, Task> datagramAction, Func<Task<ClientDatagram>> clientData, bool consoleWriter = true)
         {
             List<byte[]> recievedDatagram = new();
-            if(consoleWriter)
+            if (consoleWriter) 
+            {
                 await Task.Run(() => ServerLogger.StartConsoleWriter());
+            }
+
             while (true) 
             {
                 var data = await clientData();

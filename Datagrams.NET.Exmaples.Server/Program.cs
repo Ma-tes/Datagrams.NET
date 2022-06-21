@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using DatagramsNet.Datagrams.NET.Logger.Reader;
+using System.Net;
 
 namespace Datagrams.NET.Examples.Server 
 {
@@ -9,9 +10,12 @@ namespace Datagrams.NET.Examples.Server
         public static void Main() 
         {
             string ipAddress = Console.ReadLine();
+            var consoleReader = new ReaderManager();
+
             server = new ServerExample("ServerExample", IPAddress.Parse("10.0.0.12"));
             Task.Run(() => server.StartServer());
-            Console.ReadLine();
+            consoleReader.StartReading();
+
             Console.WriteLine(server.handShakeCounter);
             Console.ReadLine();
         }

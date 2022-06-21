@@ -1,5 +1,5 @@
-﻿using DatagramsNet.Datagrams.NET.Prefixes;
-using DatagramsNet.NET.Logger;
+﻿using DatagramsNet.Datagrams.NET.Logger;
+using DatagramsNet.Datagrams.NET.Prefixes;
 using System.Runtime.InteropServices;
 
 namespace DatagramsNet

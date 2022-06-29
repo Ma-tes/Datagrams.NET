@@ -39,6 +39,8 @@ namespace DatagramsNet
             IntPtr objectPointer = Marshal.AllocHGlobal(MemoryHolder.Length);
             Marshal.Copy(MemoryHolder, 0, objectPointer, MemoryHolder.Length);
 
+            if (typeof(T) is string)
+                return (T)(object)Marshal.PtrToStringUTF8(objectPointer);
             return (T)Marshal.PtrToStructure(objectPointer, typeof(T));
         }
 

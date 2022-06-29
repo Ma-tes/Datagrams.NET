@@ -9,8 +9,8 @@ namespace DatagramsNet
     {
         public int IdMessage { get; set; }
 
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 19)]
-        public char[] Message;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+        public string Message;
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -22,6 +22,7 @@ namespace DatagramsNet
         [Field(0)]
         public int Id = 17;
 
+        [MarshalAs(UnmanagedType.LPStruct)]
         [Field(1)]
         public ShakeMessage Message;
 

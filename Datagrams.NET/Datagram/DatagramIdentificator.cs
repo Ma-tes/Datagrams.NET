@@ -1,5 +1,4 @@
-﻿
-namespace DatagramsNet
+﻿namespace DatagramsNet.Datagram
 {
 
     internal sealed class DatagramIdentificator
@@ -8,12 +7,12 @@ namespace DatagramsNet
 
         public DatagramIdentificator() { }
 
-        public DatagramIdentificator(ReadOnlyMemory<byte[]> binaryData) 
+        public DatagramIdentificator(ReadOnlyMemory<byte[]> binaryData)
         {
-            DatagramData = binaryData; 
+            DatagramData = binaryData;
         }
 
-        public IEnumerable<byte> SerializeDatagram() 
+        public IEnumerable<byte> SerializeDatagram()
         {
             for (int i = 0; i < DatagramData.Length; i++)
             {
@@ -25,7 +24,7 @@ namespace DatagramsNet
             }
         }
 
-        public static IEnumerable<byte[]> DeserializeDatagram(byte[] subData, int[] subBytesLength) 
+        public static IEnumerable<byte[]> DeserializeDatagram(byte[] subData, int[] subBytesLength)
         {
             Memory<byte> bytes = subData;
             int lastIndex = 0;

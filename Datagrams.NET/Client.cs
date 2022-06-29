@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using DatagramsNet.Datagram;
+using System.Net;
 using System.Net.Sockets;
 
 namespace DatagramsNet
@@ -27,7 +28,7 @@ namespace DatagramsNet
 
         protected virtual async Task CheckConnection(string message = "Client is connected") 
         {
-            var handShakePacket = new HandShakePacket(new ShakeMessage() {IdMessage = 17, Message = message.ToCharArray() });
+            var handShakePacket = new HandShakePacket(new ShakeMessage() {IdMessage = 17, Message = message });
             var writer = DatagramHelper.WriteDatagram(handShakePacket);
             await DatagramHelper.SendDatagramAsync(new Func<byte[], Task>(async(byte[] bytes) => await SendAsync(bytes)), writer);
         }

@@ -2,6 +2,7 @@
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using DatagramsNet.Attributes;
+using DatagramsNet.Datagram;
 using DatagramsNet.Datagrams.NET.Logger;
 using DatagramsNet.Datagrams.NET.Logger.Reader;
 

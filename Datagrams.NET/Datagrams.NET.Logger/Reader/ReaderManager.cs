@@ -65,7 +65,7 @@ namespace DatagramsNet.Datagrams.NET.Logger.Reader
         private ICommand GetCommand(string command) 
         {
             Type commandAttribute = typeof(CommandAttribute);
-            var commands = Assembly.GetExecutingAssembly().GetTypes().Where(n => n.GetCustomAttributes(commandAttribute, true).Length > 0).ToArray();
+            var commands = AppDomain.CurrentDomain.GetAssemblies().SelectMany(t => t.GetTypes().Where(a => a.GetCustomAttributes(commandAttribute, true).Length > 0)).ToArray();
 
             for (int i = 0; i < commands.Length; i++)
             {

@@ -1,4 +1,6 @@
-﻿using DatagramsNet.Datagrams.NET.Logger.Reader;
+﻿using DatagramsNet.Datagrams.NET.Logger;
+using DatagramsNet.Datagrams.NET.Logger.Reader;
+using DatagramsNet.Datagrams.NET.Prefixes;
 using System.Net;
 
 namespace Datagrams.NET.Examples.Server 
@@ -9,14 +11,16 @@ namespace Datagrams.NET.Examples.Server
 
         public static void Main() 
         {
-            string ipAddress = Console.ReadLine();
             var consoleReader = new ReaderManager();
+            Console.WriteLine("Enter your ip address: ");
+            string ipAddress = Console.ReadLine();
 
-            server = new ServerExample("ServerExample", IPAddress.Parse("10.0.0.12"));
+            ipAddress = ipAddress == String.Empty ? IPAddress.Any.ToString() : ipAddress;
+            server = new ServerExample("ServerExample", IPAddress.Parse(ipAddress));
+            ServerLogger.Log<NormalPrefix>($"Server is correctly running on address: {ipAddress}", TimeFormat.HALF);
+
             Task.Run(() => server.StartServer());
             consoleReader.StartReading();
-
-            Console.WriteLine(server.handShakeCounter);
             Console.ReadLine();
         }
     }

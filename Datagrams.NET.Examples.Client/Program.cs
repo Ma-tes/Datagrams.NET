@@ -1,7 +1,8 @@
 ﻿using System.Net;
 using DatagramsNet;
+using DatagramsNet.Datagram;
 
-namespace Datagrams.NET.Examples.Clients 
+namespace Datagrams.NET.Examples.Clients
 {
     internal class Program 
     {
@@ -15,7 +16,7 @@ namespace Datagrams.NET.Examples.Clients
             var sendDatagrams = new List<Task>();
             for (int i = 0; i < datagramCount; i++)
             {
-                var datagram = new HandShakePacket(new ShakeMessage() {IdMessage = i, Message = "Client Message12345".ToCharArray() });
+                var datagram = new HandShakePacket(new ShakeMessage() {IdMessage = i, Message = "Client Message12345" });
                 sendDatagrams.Add(DatagramHelper.SendDatagramAsync(new Func<byte[], Task>(async (byte[] data) => await client.SendAsync(data)), DatagramHelper.WriteDatagram(datagram)));
             }
             Task.WaitAll(sendDatagrams.ToArray());

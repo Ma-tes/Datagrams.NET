@@ -1,5 +1,4 @@
-﻿
-namespace DatagramsNet
+﻿namespace DatagramsNet.Datagram
 {
     public abstract class DatagramHolder
     {

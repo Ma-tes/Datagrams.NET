@@ -6,9 +6,11 @@ using DatagramsNet.Datagrams.NET.Prefixes;
 namespace DatagramsNet.Datagrams.NET.Logger.Reader.Commands
 {
     [Command("Help", "Help: [Command]")]
-    internal sealed class HelpCommand : ICommand
+    public sealed class HelpCommand : ICommand, ICommandAction
     {
         public Argument[] Arguments => null;
+
+        public Action CommandAction { get; set; }
 
         public object[] Indexes => new object[] 
         {
@@ -19,6 +21,7 @@ namespace DatagramsNet.Datagrams.NET.Logger.Reader.Commands
         {
             if (indexes[0] is CommandIndex commandIndex) 
             {
+                CommandAction.Invoke();
                 return $"{commandIndex.Name}: {commandIndex.Value}";
             }
             await ServerLogger.Log<ErrorPrefix>("This command was found", TimeFormat.HALF);

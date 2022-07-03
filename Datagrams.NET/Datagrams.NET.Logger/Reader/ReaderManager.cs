@@ -1,4 +1,6 @@
 ﻿using DatagramsNet.Datagrams.NET.Logger.Reader.Attributes;
+using DatagramsNet.Datagrams.NET.Logger.Reader.CommandExecuting;
+using DatagramsNet.Datagrams.NET.Logger.Reader.Commands;
 using DatagramsNet.Datagrams.NET.Logger.Reader.Indexes;
 using DatagramsNet.Datagrams.NET.Logger.Reader.Interfaces;
 using DatagramsNet.Datagrams.NET.Prefixes;
@@ -18,11 +20,14 @@ namespace DatagramsNet.Datagrams.NET.Logger.Reader
             return stateNumber != 0;
         }
     }
+
     public sealed class ReaderManager
     {
         private const char baseCharacter = '>';
 
         private const char separator = ' ';
+
+        private MethodInfo commandFunctionHolderMethodInfo => typeof(CommandFunctionHolder).GetMethod(nameof(CommandFunctionHolder.GetFunction));
 
         public void StartReading() 
         {
@@ -39,6 +44,12 @@ namespace DatagramsNet.Datagrams.NET.Logger.Reader
                         Span<object> indexes = new Span<object>(GetIndexes(commandString, command.Indexes).ToArray());
                         var attributeIndex = indexes[0];
                         var currentIndexes = indexes.Slice(1, indexes.Length - 1).ToArray();
+                        if (command is ICommandAction newCommand) 
+                        {
+                            MethodInfo genericsCommandFuntion = commandFunctionHolderMethodInfo.MakeGenericMethod(command.GetType());
+                            var newCommandAction = genericsCommandFuntion.Invoke(this, new object[] {newCommand});
+                            command = (ICommand)(ICommandAction)(newCommandAction);
+                        }
 
                         string commandMessage;
                         if(attributeIndex is ArgumentIndex argumentIndex)

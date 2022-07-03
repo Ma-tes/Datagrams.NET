@@ -7,10 +7,10 @@
     <Nullable>enable</Nullable>
     <RootNamespace>Datagrams.NET.Examples.Server</RootNamespace>
     <AssemblyName>Datagrams.NET.Examples.Server</AssemblyName>
+    <LangVersion>preview</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Datagrams.NET\Datagrams.NET.csproj" />
   </ItemGroup>
-
 </Project>

@@ -17,7 +17,7 @@ namespace DatagramsNet.Datagrams.NET.Logger.Reader.CommandExecuting
         public static ICommandAction GetFunction<T>(T command)  where T : ICommandAction
         {
             var firstCommand = actionCommands.FirstOrDefault(n => command.GetType() == n.CommandType);
-            if (firstCommand.Equals(default)) 
+            if (firstCommand.CommandType is not null) 
             {
                 command.CommandAction = firstCommand.CommandAction;
                 return command;

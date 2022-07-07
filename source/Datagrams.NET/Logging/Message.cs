@@ -1,6 +1,6 @@
 ﻿using DatagramsNet.Interfaces;
 
-namespace DatagramsNet.Datagrams.NET.Logger
+namespace DatagramsNet.Logging
 {
     public struct Message 
     {

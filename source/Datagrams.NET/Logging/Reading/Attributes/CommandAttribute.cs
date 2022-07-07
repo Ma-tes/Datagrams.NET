@@ -1,14 +1,13 @@
-﻿
-namespace DatagramsNet.Datagrams.NET.Logger.Reader.Attributes
+﻿namespace DatagramsNet.Logging.Reading.Attributes
 {
     [AttributeUsage(AttributeTargets.Class)]
     internal sealed class CommandAttribute : Attribute
     {
-        public string Command { get; set; } 
+        public string Command { get; set; }
 
         public string HelpText { get; set; }
 
-        public CommandAttribute(string command, string help) 
+        public CommandAttribute(string command, string help)
         {
             Command = command;
             HelpText = help;

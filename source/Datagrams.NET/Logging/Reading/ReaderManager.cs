@@ -1,13 +1,12 @@
-﻿using DatagramsNet.Datagrams.NET.Logger.Reader.Attributes;
-using DatagramsNet.Datagrams.NET.Logger.Reader.CommandExecuting;
-using DatagramsNet.Datagrams.NET.Logger.Reader.Commands;
-using DatagramsNet.Datagrams.NET.Logger.Reader.Indexes;
-using DatagramsNet.Datagrams.NET.Logger.Reader.Interfaces;
-using DatagramsNet.Datagrams.NET.Prefixes;
+﻿using DatagramsNet.Logging.Reading.Attributes;
+using DatagramsNet.Logging.Reading.CommandExecuting;
+using DatagramsNet.Logging.Reading.Indexes;
+using DatagramsNet.Logging.Reading.Interfaces;
+using DatagramsNet.Prefixes;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-namespace DatagramsNet.Datagrams.NET.Logger.Reader
+namespace DatagramsNet.Logging.Reading
 {
     public static class InteropHelper 
     {

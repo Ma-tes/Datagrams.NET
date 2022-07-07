@@ -1,14 +1,14 @@
-﻿using DatagramsNet.Datagrams.NET.Logger.Reader.Attributes;
-using DatagramsNet.Datagrams.NET.Logger.Reader.Indexes;
-using DatagramsNet.Datagrams.NET.Logger.Reader.Interfaces;
-using DatagramsNet.Datagrams.NET.Prefixes;
+﻿using DatagramsNet.Logging.Reading.Attributes;
+using DatagramsNet.Logging.Reading.Indexes;
+using DatagramsNet.Logging.Reading.Interfaces;
+using DatagramsNet.Prefixes;
 
-namespace DatagramsNet.Datagrams.NET.Logger.Reader.Commands
+namespace DatagramsNet.Logging.Reading.Commands
 {
     [Command("Test", "Test: [Arugments] [FilePath]")]
     public sealed class TestCommand : ICommand
     {
-        public Argument[] Arguments => new Argument[] 
+        public Argument[] Arguments => new Argument[]
         {
             new Argument('a'),
             new Argument('A'),
@@ -16,13 +16,13 @@ namespace DatagramsNet.Datagrams.NET.Logger.Reader.Commands
             new Argument('C'),
         };
 
-        public object[] Indexes => new object[] 
+        public object[] Indexes => new object[]
         {
-            (new ArgumentIndex() {Command = this }),
-            (new FileIndex()),
+            new ArgumentIndex() {Command = this },
+            new FileIndex(),
         };
 
-        public async Task<string> ExecuteCommand(Argument[] args, object[] indexes) 
+        public async Task<string> ExecuteCommand(Argument[] args, object[] indexes)
         {
             if (indexes[0] is FileIndex newIndex)
             {

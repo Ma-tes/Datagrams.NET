@@ -1,8 +1,8 @@
-﻿using DatagramsNet.Datagrams.NET.Logger.Reader.Attributes;
-using DatagramsNet.Datagrams.NET.Logger.Reader.Interfaces;
+﻿using DatagramsNet.Logging.Reading.Attributes;
+using DatagramsNet.Logging.Reading.Interfaces;
 using System.Reflection;
 
-namespace DatagramsNet.Datagrams.NET.Logger.Reader.Indexes
+namespace DatagramsNet.Logging.Reading.Indexes
 {
     internal sealed class CommandIndex : IIndex<string, CommandIndex>
     {
@@ -14,12 +14,12 @@ namespace DatagramsNet.Datagrams.NET.Logger.Reader.Indexes
 
         public string Value { get; set; }
 
-        public CommandIndex GetIndex(string command, char separator, int index) 
+        public CommandIndex GetIndex(string command, char separator, int index)
         {
             var values = command.Split(separator);
-            var indexValue = (values.Length - 1) >= (index + 1) ? values[index + 1] : null;
+            var indexValue = values.Length - 1 >= index + 1 ? values[index + 1] : null;
 
-            if (indexValue is not null) 
+            if (indexValue is not null)
             {
                 var commandAttributes = GetCommandAttributes();
                 CommandAttribute commandAttribute = commandAttributes.FirstOrDefault(n => n.Command == indexValue);
@@ -32,21 +32,21 @@ namespace DatagramsNet.Datagrams.NET.Logger.Reader.Indexes
             return new CommandIndex() { Value = string.Join(commandSeparator, commandsHelpText) };
         }
 
-        private IEnumerable<string> GetCommandsHelpText() 
+        private IEnumerable<string> GetCommandsHelpText()
         {
             var commandAttributes = GetCommandAttributes();
             for (int i = 0; i < commandAttributes.Length; i++)
             {
                 yield return commandAttributes[i].HelpText;
-            }  
+            }
         }
 
-        private CommandAttribute[] GetCommandAttributes() 
+        private CommandAttribute[] GetCommandAttributes()
         {
             var commandAssemblies = Assembly.GetExecutingAssembly().GetTypes().Where(a => a.GetCustomAttributes(commandAttributeType, true).Length > 0).ToArray();
             var commandAttributes = new CommandAttribute[commandAssemblies.Length];
 
-            for (int i = 0; i < commandAssemblies.Length; i++) 
+            for (int i = 0; i < commandAssemblies.Length; i++)
             {
                 commandAttributes[i] = (CommandAttribute)commandAssemblies[i].GetCustomAttribute(commandAttributeType);
             }

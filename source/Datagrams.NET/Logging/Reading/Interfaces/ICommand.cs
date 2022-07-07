@@ -1,5 +1,4 @@
-﻿
-namespace DatagramsNet.Datagrams.NET.Logger.Reader.Interfaces
+﻿namespace DatagramsNet.Logging.Reading.Interfaces
 {
     public struct Argument 
     {

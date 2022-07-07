@@ -1,5 +1,5 @@
 ﻿
-namespace DatagramsNet.Datagrams.NET.Prefixes
+namespace DatagramsNet.Prefixes
 {
     public sealed class NormalPrefix : StandardPrefix
     {

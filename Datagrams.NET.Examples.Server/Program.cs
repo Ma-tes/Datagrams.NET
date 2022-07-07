@@ -1,27 +1,13 @@
-﻿using DatagramsNet.Datagrams.NET.Logger;
+﻿using Datagrams.NET.Examples.Server;
 using DatagramsNet.Datagrams.NET.Logger.Reader;
-using DatagramsNet.Datagrams.NET.Prefixes;
 using System.Net;
 
-namespace Datagrams.NET.Examples.Server 
-{
-    internal class Program 
-    {
-        private static ServerExample server;
+var server = new ServerExample("ServerExample", IPAddress.Any);
+var consoleReader = new ReaderManager();
 
-        public static void Main() 
-        {
-            var consoleReader = new ReaderManager();
-            Console.WriteLine("Enter your ip address: ");
-            string ipAddress = Console.ReadLine();
-
-            ipAddress = ipAddress == String.Empty ? IPAddress.Any.ToString() : ipAddress;
-            server = new ServerExample("ServerExample", IPAddress.Parse(ipAddress));
-            ServerLogger.Log<NormalPrefix>($"Server is correctly running on address: {ipAddress}", TimeFormat.HALF);
-
-            Task.Run(() => server.StartServer());
-            consoleReader.StartReading();
-            Console.ReadLine();
-        }
-    }
-}
+Task.Run(() => server.StartServer());
+consoleReader.StartReading();
+Console.WriteLine("Listening for clients...");
+Console.WriteLine("Press any key to stop");
+Console.ReadKey(intercept: true);
+Console.WriteLine($"Handshake counter: {server.handShakeCounter}");

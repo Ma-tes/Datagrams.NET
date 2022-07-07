@@ -1,26 +1,17 @@
-﻿using System.Net;
-using DatagramsNet;
+﻿using DatagramsNet;
 using DatagramsNet.Datagram;
+using System.Net;
 
-namespace Datagrams.NET.Examples.Clients
+const int DatagramCount = 100;
+const int Port = 1111;
+
+Console.Write("Target IP address (empty for local): ");
+string? ipAddress = Console.ReadLine();
+IPAddress ip = string.IsNullOrWhiteSpace(ipAddress) ? IPAddress.Loopback : IPAddress.Parse(ipAddress);
+
+var client = new Client("TestClient", ip, Port);
+Parallel.For(0, DatagramCount, async i =>
 {
-    internal class Program 
-    {
-        private static Client client;
-
-        public static void Main() 
-        {
-            string ipAddress = Console.ReadLine();
-            client = new Client("TestClient", IPAddress.Parse(ipAddress), 1111);
-            int datagramCount = 100;
-            var sendDatagrams = new List<Task>();
-            for (int i = 0; i < datagramCount; i++)
-            {
-                var datagram = new HandShakePacket(new ShakeMessage() {IdMessage = i, Message = "Client Message12345" });
-                sendDatagrams.Add(DatagramHelper.SendDatagramAsync(new Func<byte[], Task>(async (byte[] data) => await client.SendAsync(data)), DatagramHelper.WriteDatagram(datagram)));
-            }
-            Task.WaitAll(sendDatagrams.ToArray());
-            Console.ReadLine();
-        }
-    }
-}
+    var datagram = new HandShakePacket(new ShakeMessage() { IdMessage = i, Message = "Client Message12345" });
+    await DatagramHelper.SendDatagramAsync(async data => await client.SendAsync(data), data: DatagramHelper.WriteDatagram(datagram));
+});

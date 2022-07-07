@@ -9,11 +9,9 @@ using DatagramsNet.Datagrams.NET.Logger.Reader;
 namespace DatagramsNet
 {
 
-    public sealed class UdpReciever : DatagramHolder
+    public sealed class UdpReciever
     {
         private Socket _listeningSocket;
-
-        protected override TimeSpan datagramHoldTime => TimeSpan.FromMinutes(1); //TODO: Creates better use case
 
         public UdpReciever(Socket listeningSocket) 
         {
@@ -41,7 +39,6 @@ namespace DatagramsNet
                     {
                         await datagramAction(datagram, data.Client);
                     }
-                    CurrentData = null;
                 }
             }
             return true;

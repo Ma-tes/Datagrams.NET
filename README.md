@@ -1,4 +1,4 @@
 
-![logo](Datagrams.Images/BackgroundDatagramsLogo.png)
+![logo](images/BackgroundDatagramsLogo.png)
 
-## Coming soon...
+## .NET library for network communication over UDP

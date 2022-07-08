@@ -1,5 +1,5 @@
 ﻿using DatagramsNet.Examples.Server;
-using DatagramsNet.Datagrams.NET.Logger.Reader;
+using DatagramsNet.Logging.Reading;
 using System.Net;
 
 var server = new ServerExample("ServerExample", IPAddress.Any);

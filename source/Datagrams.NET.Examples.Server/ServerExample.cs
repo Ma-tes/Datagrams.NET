@@ -1,8 +1,8 @@
 ﻿using System.Net;
-using DatagramsNet.Datagrams.NET.Logger;
-using DatagramsNet.Datagrams.NET.Logger.Reader.CommandExecuting;
-using DatagramsNet.Datagrams.NET.Prefixes;
+using DatagramsNet.Logging;
+using DatagramsNet.Logging.Reading.CommandExecuting;
 using DatagramsNet.Logging.Reading.Commands;
+using DatagramsNet.Prefixes;
 
 namespace DatagramsNet.Examples.Server
 {

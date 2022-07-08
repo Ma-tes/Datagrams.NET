@@ -1,6 +1,6 @@
 ﻿using DatagramsNet.Interfaces;
 
-namespace DatagramsNet.Datagrams.NET.Prefixes
+namespace DatagramsNet.Prefixes
 {
     public abstract class StandardPrefix : IPrefix 
     {

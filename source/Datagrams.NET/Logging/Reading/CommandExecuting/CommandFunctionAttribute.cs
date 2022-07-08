@@ -1,13 +1,13 @@
-﻿using DatagramsNet.Datagrams.NET.Logger.Reader.Interfaces;
+﻿using DatagramsNet.Logging.Reading.Interfaces;
 
-namespace DatagramsNet.Datagrams.NET.Logger.Reader.CommandExecuting
+namespace DatagramsNet.Logging.Reading.CommandExecuting
 {
     [AttributeUsage(AttributeTargets.Method)]
     public class CommandFunctionAttribute<T> : Attribute where T : ICommandAction
     {
         public ICommandAction Command { get; private set; }
 
-        public CommandFunctionAttribute() 
+        public CommandFunctionAttribute()
         {
             Command = Activator.CreateInstance<T>();
         }

@@ -1,7 +1,6 @@
-﻿
-namespace DatagramsNet.Datagrams.NET.Logger.Reader.Interfaces
+﻿namespace DatagramsNet.Logging.Reading.Interfaces
 {
-    public interface IIndex<T, TOutPut> where TOutPut : new() 
+    public interface IIndex<T, TOutPut> where TOutPut : new()
     {
         public string Name { get; }
 

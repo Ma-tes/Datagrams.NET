@@ -1,11 +1,10 @@
 ﻿using System.Net;
-using DatagramsNet;
 using DatagramsNet.Datagrams.NET.Logger;
 using DatagramsNet.Datagrams.NET.Logger.Reader.CommandExecuting;
-using DatagramsNet.Datagrams.NET.Logger.Reader.Commands;
 using DatagramsNet.Datagrams.NET.Prefixes;
+using DatagramsNet.Logging.Reading.Commands;
 
-namespace Datagrams.NET.Examples.Server
+namespace DatagramsNet.Examples.Server
 {
     internal sealed class ServerExample : ServerManager
     {

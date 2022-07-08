@@ -5,7 +5,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>Datagrams.NET.Examples.Server</RootNamespace>
+    <RootNamespace>DatagramsNet.Examples.Server</RootNamespace>
     <AssemblyName>Datagrams.NET.Examples.Server</AssemblyName>
     <LangVersion>preview</LangVersion>
   </PropertyGroup>

@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>preview</LangVersion>
+    <RootNamespace>DatagramsNet.Examples.Clients</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

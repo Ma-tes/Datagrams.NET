@@ -1,54 +1,25 @@
-﻿using DatagramsNet.Logging;
-using DatagramsNet.Prefixes;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace DatagramsNet
 {
-    public sealed class BinaryHelper : IDisposable //TODO: GC.AllocateArray();
+    internal static class BinaryHelper
     {
-        public byte[] MemoryHolder { get; private set; }
-
-        private IntPtr @objectPointer;
-
-        private object binaryObject;
-
-        public BinaryHelper(byte[] data) 
+        public static byte[] Write(object value)
         {
-            if (data is not null)
-                MemoryHolder = data;
-            else
-                ServerLogger.Log<ErrorPrefix>($"{data.GetType()} in {nameof(BinaryHelper)} is null");
+            var bytes = new byte[Marshal.SizeOf(value)];
+            IntPtr ptr = Marshal.AllocHGlobal(bytes.Length);
+            Marshal.StructureToPtr(value, ptr, false);
+            Marshal.Copy(ptr, bytes, 0, bytes.Length);
+            return bytes;
         }
 
-        public BinaryHelper(object @object) 
+        public static T Read<T>(byte[] bytes)
         {
-            binaryObject = @object;
-            MemoryHolder = new byte[Marshal.SizeOf(@object)];
-            @objectPointer = GetIntPtr();
+            IntPtr objectPointer = Marshal.AllocHGlobal(bytes.Length);
+            Marshal.Copy(bytes, 0, objectPointer, bytes.Length);
+            if (typeof(T) == typeof(string))
+                return (T)(object)Marshal.PtrToStringUTF8(objectPointer)!;
+            return (T)Marshal.PtrToStructure(objectPointer, typeof(T))!;
         }
-
-        public bool Write() 
-        {
-            Marshal.StructureToPtr(binaryObject, @objectPointer, false);
-            Marshal.Copy(@objectPointer, MemoryHolder, 0, MemoryHolder.Length);
-            return MemoryHolder[0] != 0;
-        }
-
-        public T Read<T>()
-        {
-            IntPtr objectPointer = Marshal.AllocHGlobal(MemoryHolder.Length);
-            Marshal.Copy(MemoryHolder, 0, objectPointer, MemoryHolder.Length);
-
-            if (typeof(T) is string)
-                return (T)(object)Marshal.PtrToStringUTF8(objectPointer);
-            return (T)Marshal.PtrToStructure(objectPointer, typeof(T));
-        }
-
-        public void Dispose() 
-        {
-            Marshal.FreeHGlobal(@objectPointer);
-        }
-
-        private IntPtr GetIntPtr() => Marshal.AllocHGlobal(MemoryHolder.Length); //**(IntPtr**)(&reference);
     }
 }

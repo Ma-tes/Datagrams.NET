@@ -1,11 +1,11 @@
-﻿using DatagramsNet.Interfaces;
+﻿using DatagramsNet.Attributes;
+using DatagramsNet.Interfaces;
 using System.Runtime.InteropServices;
-using DatagramsNet.Attributes;
 
 namespace DatagramsNet
 {
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct ShakeMessage 
+    public struct ShakeMessage
     {
         public int IdMessage { get; set; }
 
@@ -15,19 +15,23 @@ namespace DatagramsNet
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     [Packet]
-    public sealed class HandShakePacket : IDatagram
+    public sealed class HandshakePacket : IDatagram
     {
         public int ProperId { get; }
 
         [Field(0)]
-        public int Id = 17;
+        public readonly int Id = 17;
 
-        [MarshalAs(UnmanagedType.LPStruct)]
-        [Field(1)]
-        public ShakeMessage Message;
+        [Field(1), MarshalAs(UnmanagedType.LPStruct)]
+        public readonly ShakeMessage Message;
 
-        public HandShakePacket() { }
+        public HandshakePacket()
+        {
+        }
 
-        public HandShakePacket(ShakeMessage message) => Message = message;
+        public HandshakePacket(ShakeMessage message)
+        {
+            Message = message;
+        }
     }
 }

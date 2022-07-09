@@ -1,6 +1,6 @@
 ﻿using DatagramsNet.Logging.Reading.Attributes;
-using DatagramsNet.Logging.Reading.Indexes;
-using DatagramsNet.Logging.Reading.Interfaces;
+using DatagramsNet.Logging.Reading.Arguments;
+using DatagramsNet.Logging.Reading.Models;
 using DatagramsNet.Prefixes;
 
 namespace DatagramsNet.Logging.Reading.Commands
@@ -8,23 +8,23 @@ namespace DatagramsNet.Logging.Reading.Commands
     [Command("Help", "Help: [Command]")]
     public sealed class HelpCommand : ICommand, ICommandAction
     {
-        public Argument[] Arguments => null;
+        public Option[]? Options => null;
 
-        public Action CommandAction { get; set; }
+        public Action? CommandAction { get; set; }
 
-        public object[] Indexes => new object[]
+        public object[] Arguments => new object[]
         {
-            new CommandIndex(),
+            new CommandArgument()
         };
 
-        public async Task<string> ExecuteCommand(Argument[] args, object[] indexes)
+        public async Task<string?> ExecuteCommandAsync(Option[] args, object[] indexes)
         {
-            if (indexes[0] is CommandIndex commandIndex)
+            if (indexes[0] is CommandArgument commandIndex)
             {
-                CommandAction.Invoke();
+                CommandAction?.Invoke();
                 return $"{commandIndex.Name}: {commandIndex.Value}";
             }
-            await ServerLogger.Log<ErrorPrefix>("This command was found", TimeFormat.HALF);
+            await ServerLogger.LogAsync<ErrorPrefix>("This command was found.", TimeFormat.Half);
             return null;
         }
     }

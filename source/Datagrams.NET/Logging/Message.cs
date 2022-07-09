@@ -2,7 +2,7 @@
 
 namespace DatagramsNet.Logging
 {
-    public struct Message 
+    public struct Message
     {
         public string SingleMessage { get; set; }
 

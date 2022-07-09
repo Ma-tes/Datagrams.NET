@@ -1,49 +1,52 @@
-﻿using System.Net;
-using System.Net.Sockets;
-using System.Runtime.InteropServices;
-using DatagramsNet.Attributes;
+﻿using DatagramsNet.Attributes;
 using DatagramsNet.Datagram;
 using DatagramsNet.Logging;
+using System.Net;
+using System.Net.Sockets;
+using System.Runtime.InteropServices;
 
 namespace DatagramsNet
 {
 
     public sealed class UdpReciever
     {
-        private Socket _listeningSocket;
+        private readonly Socket _listeningSocket;
 
-        public UdpReciever(Socket listeningSocket) 
+        public UdpReciever(Socket listeningSocket)
         {
             _listeningSocket = listeningSocket;
         }
 
-        public async Task<bool> StartRecievingAsync(Func<object, EndPoint, Task> datagramAction, Func<Task<ClientDatagram>> clientData, bool consoleWriter = true)
+        public static async Task<bool> StartRecievingAsync(Func<object, EndPoint, Task> datagramAction, Func<Task<ClientDatagram>> clientData, bool consoleWriter = true)
         {
-            List<byte[]> recievedDatagram = new();
-            if (consoleWriter) 
+            if (consoleWriter)
             {
-                await Task.Run(() => ServerLogger.StartConsoleWriter());
+                ServerLogger.StartConsoleWriter();
             }
 
-            while (true) 
+            while (true)
             {
                 var data = await clientData();
-                Type dataType = DatagramHelper.GetBaseDatagramType(data.Datagram[0], typeof(PacketAttribute));
+                Type? dataType = DatagramHelper.GetBaseDatagramType(data.Datagram[0], typeof(PacketAttribute));
+                if (dataType is null)
+                {
+                    continue; // Consider logging this event
+                }
+
                 var newData = DatagramIdentificator.DeserializeDatagram(data.Datagram, GetSubBytesLength(dataType).ToArray());
 
                 if (newData is not null)
                 {
-                    object datagram = DatagramHelper.ReadDatagram(newData.ToArray().AsMemory());
-                    if (datagram is not null) 
+                    object? datagram = DatagramHelper.ReadDatagram(newData.ToArray().AsMemory());
+                    if (datagram is not null)
                     {
                         await datagramAction(datagram, data.Client);
                     }
                 }
             }
-            return true;
         }
 
-        private IEnumerable<int> GetSubBytesLength(Type datagramType) 
+        private static IEnumerable<int> GetSubBytesLength(Type datagramType)
         {
             var fields = datagramType.GetFields();
             for (int i = 0; i < fields.Length; i++)
@@ -52,7 +55,7 @@ namespace DatagramsNet
             }
         }
 
-        public async Task<ClientDatagram> GetDatagramDataAsync() 
+        public async Task<ClientDatagram> GetDatagramDataAsync()
         {
             Memory<byte> datagramMemory = new byte[4096];
             EndPoint currentEndPoint = (EndPoint)new IPEndPoint(IPAddress.Any, 0);

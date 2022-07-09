@@ -1,36 +1,36 @@
 ﻿using DatagramsNet.Logging.Reading.Attributes;
-using DatagramsNet.Logging.Reading.Indexes;
-using DatagramsNet.Logging.Reading.Interfaces;
+using DatagramsNet.Logging.Reading.Arguments;
+using DatagramsNet.Logging.Reading.Models;
 using DatagramsNet.Prefixes;
 
 namespace DatagramsNet.Logging.Reading.Commands
 {
-    [Command("Test", "Test: [Arugments] [FilePath]")]
+    [Command("Test", "Test: [Arguments] [FilePath]")]
     public sealed class TestCommand : ICommand
     {
-        public Argument[] Arguments => new Argument[]
+        public Option[] Options => new Option[]
         {
-            new Argument('a'),
-            new Argument('A'),
-            new Argument('c'),
-            new Argument('C'),
+            new Option('a'),
+            new Option('A'),
+            new Option('c'),
+            new Option('C'),
         };
 
-        public object[] Indexes => new object[]
+        public object[] Arguments => new object[]
         {
-            new ArgumentIndex() {Command = this },
-            new FileIndex(),
+            new OptionsArgument() { Command = this },
+            new FileArgument(),
         };
 
-        public async Task<string> ExecuteCommand(Argument[] args, object[] indexes)
+        public async Task<string?> ExecuteCommandAsync(Option[] options, object[] arguments)
         {
-            if (indexes[0] is FileIndex newIndex)
+            if (arguments[0] is FileArgument fileArgument)
             {
-                var message = $"Your {newIndex.Name} is maybe rigth if comes here: {newIndex.Value}";
+                var message = $"Your {fileArgument.Name} is maybe rigth if comes here: {fileArgument.Value}";
                 return message;
             }
             else
-                await ServerLogger.Log<ErrorPrefix>("Sorry but your syntax is wrong", TimeFormat.HALF);
+                await ServerLogger.LogAsync<ErrorPrefix>("Sorry but your syntax is wrong", TimeFormat.Half);
             return string.Empty;
         }
     }

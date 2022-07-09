@@ -1,18 +1,17 @@
-﻿using DatagramsNet.Logging.Reading.Interfaces;
-using System.Reflection;
+﻿using DatagramsNet.Logging.Reading.Models;
+using System.Diagnostics;
 
-namespace DatagramsNet.Logging.Reading.CommandExecuting
+namespace DatagramsNet.Logging.Reading.CommandExecution
 {
-    internal struct ActionCommand
+    internal readonly struct ActionCommand
     {
-        public Type CommandType { get; set; }
-
-        public Action CommandAction { get; set; }
+        public Type CommandType { get; init; }
+        public Action CommandAction { get; init; }
     }
 
     internal static class CommandFunctionHolder
     {
-        private static List<ActionCommand> actionCommands = new();
+        private static readonly List<ActionCommand> actionCommands = new();
 
         public static ICommandAction GetFunction<T>(T command) where T : ICommandAction
         {
@@ -23,6 +22,7 @@ namespace DatagramsNet.Logging.Reading.CommandExecuting
                 return command;
             }
             var cacheCommand = CacheCommandFunction(command);
+            Debug.Assert(cacheCommand.CommandAction is not null);
             actionCommands.Add(new ActionCommand() { CommandType = command.GetType(), CommandAction = cacheCommand.CommandAction });
             return cacheCommand;
         }
@@ -30,7 +30,7 @@ namespace DatagramsNet.Logging.Reading.CommandExecuting
         private static ICommandAction CacheCommandFunction<T>(T command) where T : ICommandAction
         {
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            Action methodAction = default;
+            Action? methodAction = default;
             for (int i = 0; i < assemblies.Length; i++)
             {
                 //For now command will support only one action or it will throw exception
@@ -45,6 +45,10 @@ namespace DatagramsNet.Logging.Reading.CommandExecuting
                 //else
                 //throw new Exception("Multiple actions for one command are not supported");
             }
+
+            if (methodAction is null)
+                throw new Exception($"{nameof(methodAction)} was unexpectably null.");
+
             command.CommandAction = methodAction;
             return command;
         }

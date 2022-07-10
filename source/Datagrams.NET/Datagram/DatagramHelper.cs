@@ -1,6 +1,8 @@
 ﻿using System.Reflection;
 using DatagramsNet.Interfaces;
 using DatagramsNet.Attributes;
+using DatagramsNet.Logging;
+using DatagramsNet.Prefixes;
 
 namespace DatagramsNet.Datagram
 {
@@ -66,12 +68,9 @@ namespace DatagramsNet.Datagram
             for (int i = 0; i < assemblies.Length; i++)
             {
                 FieldInfo[] properties = assemblies[i].GetFields();
-                for (int j = 0; j < properties.Length; j++)
-                {
-                    var fieldValue = properties[j].GetValue(Activator.CreateInstance(assemblies[i]));
-                    if (fieldValue.Equals(id))
-                        return assemblies[i];
-                }
+                object fieldValue = properties[0].GetValue(Activator.CreateInstance(assemblies[i]));
+                if (fieldValue.Equals(id))
+                    return assemblies[i];
             }
             return null;
         }

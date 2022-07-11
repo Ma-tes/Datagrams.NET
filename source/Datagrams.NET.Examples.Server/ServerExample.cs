@@ -9,8 +9,7 @@ namespace DatagramsNet.Examples.Server
 {
     internal sealed class ServerExample : ServerManager
     {
-        public override int PortNumber => base.PortNumber;
-        public int HandShakeCounter { get; set; } = 0;
+        public int HandshakeCounter { get; set; }
 
         private static ServerExample? serverHolder;
 
@@ -23,18 +22,16 @@ namespace DatagramsNet.Examples.Server
         {
             if (datagram is HandshakePacket newDatagram)
             {
-                HandShakeCounter++;
-                await ServerLogger.LogAsync<NormalPrefix>($"Id: {HandShakeCounter} packet: {newDatagram.GetType()}", TimeFormat.Half);
+                HandshakeCounter++;
+                await ServerLogger.LogAsync<NormalPrefix>($"Id: {HandshakeCounter} packet: {newDatagram.GetType()}", TimeFormat.Half);
             }
         }
 
-        [CommandFunction<HelpCommand>()]
+        [CommandFunction<HelpCommand>]
         public static void WriteServerInformation()
         {
             Debug.Assert(serverHolder is not null);
-
-            var serverConnectionCount = serverHolder.ServerSocket.Available;
-            Task.Run(async () => await ServerLogger.LogAsync<NormalPrefix>($"Connected: {serverHolder.ServerSocket.Connected}", TimeFormat.Half));
+            _ = ServerLogger.LogAsync<NormalPrefix>($"Connected: {serverHolder.ServerSocket.Connected}", TimeFormat.Half);
         }
     }
 }

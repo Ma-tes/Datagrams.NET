@@ -1,31 +1,32 @@
-﻿using DatagramsNet.Logging.Reading.Attributes;
-using DatagramsNet.Logging.Reading.Arguments;
+﻿using DatagramsNet.Logging.Reading.Arguments;
+using DatagramsNet.Logging.Reading.Attributes;
 using DatagramsNet.Logging.Reading.Models;
-using DatagramsNet.Prefixes;
+using System.Collections.Immutable;
 
 namespace DatagramsNet.Logging.Reading.Commands
 {
     [Command("Help", "Help: [Command]")]
-    public sealed class HelpCommand : ICommand, ICommandAction
+    public sealed class HelpCommand : Command, ICommandAction
     {
-        public Option[]? Options => null;
-
         public Action? CommandAction { get; set; }
 
-        public object[] Arguments => new object[]
-        {
-            new CommandArgument()
-        };
+        private static readonly ImmutableArray<IFactory> arguments = ImmutableArray.Create<IFactory>
+        (
+            CommandArgument.Factory
+        );
 
-        public async Task<string?> ExecuteCommandAsync(Option[] args, object[] indexes)
+        public HelpCommand() : base(arguments: arguments)
         {
-            if (indexes[0] is CommandArgument commandIndex)
+        }
+
+        public override ValueTask<CommandResult> ExecuteAsync(Option[] options, object[] arguments)
+        {
+            if (arguments[0] is CommandArgument commandIndex)
             {
                 CommandAction?.Invoke();
-                return $"{commandIndex.Name}: {commandIndex.Value}";
+                return OkTask($"{commandIndex.Name}: {commandIndex.Value}");
             }
-            await ServerLogger.LogAsync<ErrorPrefix>("This command was found.", TimeFormat.Half);
-            return null;
+            return FailTask("This command was not found.");
         }
     }
 }

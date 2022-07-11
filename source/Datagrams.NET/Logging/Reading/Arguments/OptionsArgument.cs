@@ -1,41 +1,47 @@
 ﻿using DatagramsNet.Logging.Reading.Models;
-using DatagramsNet.Prefixes;
+using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DatagramsNet.Logging.Reading.Arguments
 {
-    internal sealed class OptionsArgument : IArgument<Option[], OptionsArgument>
+    internal sealed class OptionsArgument : IArgument<Option[]>
     {
         public string Name => "@argument";
-        public Option[] Value { get; set; }
+        public Option[] Value { get; }
 
-        public ICommand Command { get; init; }
+        public static IArgumentFactory<OptionsArgument> Factory(ImmutableArray<Option> options) => new ArgumentFactory(options);
 
-        public OptionsArgument GetArgument(string command, char separator, int index)
+        public OptionsArgument(Option[] value)
         {
-            var values = command.Split(separator);
-            var indexValue = values.Length - 1 >= index + 1 ? values[index + 1] : null;
-            var properArguments = Array.Empty<Option>();
-            if (indexValue is not null)
-                properArguments = GetProperArguments(Command.Options, indexValue.ToCharArray()).ToArray();
-
-            return new OptionsArgument() { Command = Command, Value = properArguments };
+            Value = value;
         }
 
-        private static IEnumerable<Option> GetProperArguments(Option[] baseArguments, char[] argumentsChar)
+        private sealed class ArgumentFactory : ArgumentFactory<OptionsArgument>
         {
-            for (int i = 0; i < argumentsChar.Length; i++)
+            public override string Name => "option";
+
+            private readonly ImmutableArray<Option> validOptions;
+
+            public ArgumentFactory(ImmutableArray<Option> validOptions)
             {
-                int index = 0;
-                for (int j = 0; j < baseArguments.Length; j++)
+                this.validOptions = validOptions;
+            }
+
+            public override bool TryCreate(string arg, [NotNullWhen(true)] out OptionsArgument? argument)
+            {
+                Span<Option> options = stackalloc Option[arg.Length];
+                for (int i = 0; i < arg.Length; i++)
                 {
-                    if (argumentsChar[i] == baseArguments[j].Character)
+                    if (!validOptions.Any(option => option.Character == arg[i]))
                     {
-                        index++;
-                        yield return new Option(argumentsChar[i]);
+                        argument = null;
+                        return false;
                     }
+
+                    options[i] = new Option(arg[i]);
                 }
-                if (index == 0)
-                    _ = ServerLogger.LogAsync<ErrorPrefix>($"Argument '{argumentsChar[i]}' was not found.");
+                argument = new OptionsArgument(options.ToArray());
+                return true;
             }
         }
     }

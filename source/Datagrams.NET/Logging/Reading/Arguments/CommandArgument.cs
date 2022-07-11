@@ -1,54 +1,65 @@
 ﻿using DatagramsNet.Logging.Reading.Attributes;
 using DatagramsNet.Logging.Reading.Models;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace DatagramsNet.Logging.Reading.Arguments
 {
-    internal sealed class CommandArgument : IArgument<string, CommandArgument>
+    internal sealed class CommandArgument : IArgument<string>
     {
-        private const char commandSeparator = '\n';
+        public static IArgumentFactory<CommandArgument> Factory => _factory ??= new();
+        private static ArgumentFactory? _factory;
 
         public string Name => "@Command";
+        public string Value { get; }
 
-        public string Value { get; set; }
-
-        public CommandArgument GetArgument(string command, char separator, int index)
+        public CommandArgument(string value)
         {
-            var values = command.Split(separator);
-            var indexValue = values.Length - 1 >= index + 1 ? values[index + 1] : null;
+            Value = value;
+        }
 
-            if (indexValue is not null)
+        private sealed class ArgumentFactory : ArgumentFactory<CommandArgument>
+        {
+            public override string Name => "command";
+
+            private static readonly CommandAttribute[] commandAttributes;
+            private static readonly CommandArgument helpTextArgument;
+
+            static ArgumentFactory()
             {
-                var commandAttributes = GetCommandAttributes();
-                CommandAttribute commandAttribute = commandAttributes.FirstOrDefault(n => n.Command == indexValue);
-                if (commandAttribute is not null)
-                    return new CommandArgument() { Value = commandAttribute.HelpText };
+                commandAttributes =
+                    Assembly
+                    .GetExecutingAssembly()
+                    .GetTypes()
+                    .SelectMany(t => t.GetCustomAttributes<CommandAttribute>())
+                    .ToArray();
+
+                string commandsHelpText = string.Join(Environment.NewLine, commandAttributes.Select(attribute => attribute.HelpText));
+                helpTextArgument = new(commandsHelpText);
+            }
+
+            public override bool TryCreate(string arg, [NotNullWhen(true)] out CommandArgument? argument)
+            {
+                if (arg is not null)
+                {
+                    CommandAttribute? commandAttribute = commandAttributes.FirstOrDefault(attribute => attribute.Command == arg);
+                    if (commandAttribute is not null)
+                    {
+                        argument = new CommandArgument(commandAttribute.HelpText);
+                        return true;
+                    }
+                    else
+                    {
+                        argument = null;
+                        return false;
+                    }
+                }
                 else
-                    return null;
+                {
+                    argument = helpTextArgument;
+                    return true;
+                }
             }
-            var commandsHelpText = GetCommandsHelpText();
-            return new CommandArgument() { Value = string.Join(commandSeparator, commandsHelpText) };
-        }
-
-        private IEnumerable<string> GetCommandsHelpText()
-        {
-            var commandAttributes = GetCommandAttributes();
-            for (int i = 0; i < commandAttributes.Length; i++)
-            {
-                yield return commandAttributes[i].HelpText;
-            }
-        }
-
-        private static CommandAttribute[] GetCommandAttributes()
-        {
-            var commandAssemblies = Assembly.GetExecutingAssembly().GetTypes().Where(a => a.GetCustomAttributes<CommandAttribute>(true).Any()).ToArray();
-            var commandAttributes = new CommandAttribute[commandAssemblies.Length];
-
-            for (int i = 0; i < commandAssemblies.Length; i++)
-            {
-                commandAttributes[i] = commandAssemblies[i].GetCustomAttribute<CommandAttribute>();
-            }
-            return commandAttributes;
         }
     }
 }

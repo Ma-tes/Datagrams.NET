@@ -1,27 +1,36 @@
 ﻿using DatagramsNet.Logging.Reading.Models;
-using DatagramsNet.Prefixes;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DatagramsNet.Logging.Reading.Arguments
 {
-    internal sealed class FileArgument : IArgument<string, FileArgument>
+    internal sealed class FileArgument : IArgument<string>
     {
         public string Name => "@file";
+        public string Value { get; }
 
-        public string Value { get; set; }
+        public static IArgumentFactory<FileArgument> Factory => _factory ??= new();
+        private static ArgumentFactory? _factory;
 
-        public FileArgument GetArgument(string command, char separator, int index)
+        public FileArgument(string value)
         {
-            var values = command.Split(separator);
-            var indexValue = values.Length - 1 >= index + 1 ? values[index + 1] : null;
+            Value = value;
+        }
 
-            if (indexValue is not null)
+        private sealed class ArgumentFactory : ArgumentFactory<FileArgument>
+        {
+            public override string Name => "file";
+
+            public override bool TryCreate(string arg, [NotNullWhen(true)] out FileArgument? argument)
             {
-                if (File.Exists(indexValue))
-                    return new FileArgument() { Value = indexValue };
-                else
-                    Task.Run(async () => await ServerLogger.LogAsync<ErrorPrefix>("This path was not found"));
+                if (File.Exists(arg))
+                {
+                    argument = new FileArgument(arg);
+                    return true;
+                }
+
+                argument = null;
+                return false;
             }
-            return null;
         }
     }
 }

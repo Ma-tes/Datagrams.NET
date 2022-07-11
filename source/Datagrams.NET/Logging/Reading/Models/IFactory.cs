@@ -1,8 +1,8 @@
 ﻿namespace DatagramsNet.Logging.Reading.Models
 {
-    public interface IArgument<T>
+    public interface IFactory
     {
         public string Name { get; }
-        public T Value { get; }
+        public object? Create(string arg);
     }
 }

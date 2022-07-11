@@ -1,37 +1,39 @@
-﻿using DatagramsNet.Logging.Reading.Attributes;
-using DatagramsNet.Logging.Reading.Arguments;
+﻿using DatagramsNet.Logging.Reading.Arguments;
+using DatagramsNet.Logging.Reading.Attributes;
 using DatagramsNet.Logging.Reading.Models;
-using DatagramsNet.Prefixes;
+using System.Collections.Immutable;
 
 namespace DatagramsNet.Logging.Reading.Commands
 {
     [Command("Test", "Test: [Arguments] [FilePath]")]
-    public sealed class TestCommand : ICommand
+    public sealed class TestCommand : Command
     {
-        public Option[] Options => new Option[]
-        {
+        private static readonly ImmutableArray<Option> options = ImmutableArray.Create
+            (
             new Option('a'),
             new Option('A'),
             new Option('c'),
-            new Option('C'),
-        };
+            new Option('C')
+            );
 
-        public object[] Arguments => new object[]
+        private static readonly ImmutableArray<IFactory> arguments = ImmutableArray.Create<IFactory>
+            (
+            OptionsArgument.Factory(options),
+            FileArgument.Factory
+            );
+
+        public TestCommand() : base(options, arguments)
         {
-            new OptionsArgument() { Command = this },
-            new FileArgument(),
-        };
+        }
 
-        public async Task<string?> ExecuteCommandAsync(Option[] options, object[] arguments)
+        public override ValueTask<CommandResult> ExecuteAsync(Option[] options, object[] arguments)
         {
             if (arguments[0] is FileArgument fileArgument)
             {
-                var message = $"Your {fileArgument.Name} is maybe rigth if comes here: {fileArgument.Value}";
-                return message;
+                var message = $"Your {fileArgument.Name} might be correct if it comes here: {fileArgument.Value}";
+                return OkTask(message);
             }
-            else
-                await ServerLogger.LogAsync<ErrorPrefix>("Sorry but your syntax is wrong", TimeFormat.Half);
-            return string.Empty;
+            return FailTask("Wrong syntax.");
         }
     }
 }

@@ -23,7 +23,7 @@ namespace DatagramsNet.Examples.Server
             if (datagram is HandshakePacket newDatagram)
             {
                 HandshakeCounter++;
-                await ServerLogger.LogAsync<NormalPrefix>($"Id: {HandshakeCounter} packet: {newDatagram.GetType()}", TimeFormat.Half);
+                await ServerLogger.LogAsync<NormalPrefix>($"Id: {HandshakeCounter} packet: {newDatagram.GetType()} message: {newDatagram.Message.Message} array(length): {newDatagram.Message.Keys.Length}", TimeFormat.Half);
             }
         }
 

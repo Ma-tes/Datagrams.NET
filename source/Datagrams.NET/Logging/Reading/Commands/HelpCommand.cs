@@ -21,10 +21,15 @@ namespace DatagramsNet.Logging.Reading.Commands
 
         public override ValueTask<CommandResult> ExecuteAsync(Option[] options, object[] arguments)
         {
-            if (arguments[0] is CommandArgument commandIndex)
+            if (arguments.Length == 0)
+            {
+                CommandArgument command = CommandArgument.AllCommandsArgument;
+                return OkTask($"{command.Name}: {command.Value}");
+            }
+            else if (arguments[0] is CommandArgument command)
             {
                 CommandAction?.Invoke();
-                return OkTask($"{commandIndex.Name}: {commandIndex.Value}");
+                return OkTask($"{command.Name}: {command.Value}");
             }
             return FailTask("This command was not found.");
         }

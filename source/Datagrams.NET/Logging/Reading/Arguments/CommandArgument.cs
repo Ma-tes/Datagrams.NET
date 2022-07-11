@@ -7,6 +7,7 @@ namespace DatagramsNet.Logging.Reading.Arguments
 {
     internal sealed class CommandArgument : IArgument<string>
     {
+        public static CommandArgument AllCommandsArgument => ArgumentFactory.HelpTextArgument;
         public static IArgumentFactory<CommandArgument> Factory => _factory ??= new();
         private static ArgumentFactory? _factory;
 
@@ -22,8 +23,8 @@ namespace DatagramsNet.Logging.Reading.Arguments
         {
             public override string Name => "command";
 
+            public static CommandArgument HelpTextArgument { get; }
             private static readonly CommandAttribute[] commandAttributes;
-            private static readonly CommandArgument helpTextArgument;
 
             static ArgumentFactory()
             {
@@ -35,7 +36,7 @@ namespace DatagramsNet.Logging.Reading.Arguments
                     .ToArray();
 
                 string commandsHelpText = string.Join(Environment.NewLine, commandAttributes.Select(attribute => attribute.HelpText));
-                helpTextArgument = new(commandsHelpText);
+                HelpTextArgument = new(commandsHelpText);
             }
 
             public override bool TryCreate(string arg, [NotNullWhen(true)] out CommandArgument? argument)
@@ -56,7 +57,7 @@ namespace DatagramsNet.Logging.Reading.Arguments
                 }
                 else
                 {
-                    argument = helpTextArgument;
+                    argument = HelpTextArgument;
                     return true;
                 }
             }

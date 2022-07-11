@@ -4,13 +4,22 @@ using System.Runtime.InteropServices;
 
 namespace DatagramsNet
 {
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 8)]
+    public struct ConnectionKey<T> 
+    {
+        public T Key { get; set; }
+    }
+
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct ShakeMessage
+    public class ShakeMessage 
     {
         public int IdMessage { get; set; }
 
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-        public string Message;
+        public string? Message;
+
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 1)]
+        public ConnectionKey<TimeSpan>[] Keys = new ConnectionKey<TimeSpan>[] { new ConnectionKey<TimeSpan>() { Key = TimeSpan.Zero } };
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -27,6 +36,7 @@ namespace DatagramsNet
 
         public HandshakePacket()
         {
+            Message = new ShakeMessage();
         }
 
         public HandshakePacket(ShakeMessage message)

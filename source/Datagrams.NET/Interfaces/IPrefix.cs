@@ -7,6 +7,9 @@ namespace DatagramsNet.Interfaces
 
         public ConsoleColor Color { get; }
 
-        public async Task WritePrefixAsync() { }
+        public Task WritePrefixAsync()
+        {
+            return Task.CompletedTask;
+        }
     }
 }

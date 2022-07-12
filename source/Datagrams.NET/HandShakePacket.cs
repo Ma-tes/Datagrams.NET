@@ -1,6 +1,6 @@
-﻿using DatagramsNet.Interfaces;
+﻿using DatagramsNet.Attributes;
+using DatagramsNet.Interfaces;
 using System.Runtime.InteropServices;
-using DatagramsNet.Attributes;
 
 namespace DatagramsNet
 {
@@ -16,7 +16,7 @@ namespace DatagramsNet
         public int IdMessage { get; set; }
 
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-        public string Message;
+        public string? Message;
 
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 1)]
         public ConnectionKey<TimeSpan>[] Keys = new ConnectionKey<TimeSpan>[] { new ConnectionKey<TimeSpan>() { Key = TimeSpan.Zero } };
@@ -24,19 +24,24 @@ namespace DatagramsNet
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     [Packet]
-    public sealed class HandShakePacket : IDatagram
+    public sealed class HandshakePacket : IDatagram
     {
         public int ProperId { get; }
 
         [Field(0)]
-        public int Id = 17;
+        public readonly int Id = 17;
 
-        [MarshalAs(UnmanagedType.LPStruct)]
-        [Field(1)]
-        public ShakeMessage Message;
+        [Field(1), MarshalAs(UnmanagedType.LPStruct)]
+        public readonly ShakeMessage Message;
 
-        public HandShakePacket() { }
+        public HandshakePacket()
+        {
+            Message = new ShakeMessage();
+        }
 
-        public HandShakePacket(ShakeMessage message) => Message = message;
+        public HandshakePacket(ShakeMessage message)
+        {
+            Message = message;
+        }
     }
 }

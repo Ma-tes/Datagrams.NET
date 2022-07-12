@@ -1,100 +1,146 @@
-﻿using DatagramsNet.Logging.Reading.Attributes;
-using DatagramsNet.Logging.Reading.CommandExecuting;
-using DatagramsNet.Logging.Reading.Indexes;
-using DatagramsNet.Logging.Reading.Interfaces;
+﻿using DatagramsNet.Logging.Reading.Arguments;
+using DatagramsNet.Logging.Reading.Attributes;
+using DatagramsNet.Logging.Reading.CommandExecution;
+using DatagramsNet.Logging.Reading.Models;
 using DatagramsNet.Prefixes;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
 namespace DatagramsNet.Logging.Reading
 {
-    public static class InteropHelper 
+    public static class ReaderManager
     {
-        [DllImport("User32.dll")]
-        private static extern ushort GetAsyncKeyState(byte keyNumber);
+        private const char PrefixCharacter = '>';
+        private const char SeparatorCharacter = ' ';
 
-        public static async Task<bool> GetKeyAsync(ConsoleKey key) 
+        private static readonly MethodInfo commandFunctionHolderMethodInfo = typeof(CommandFunctionHolder).GetMethod(nameof(CommandFunctionHolder.GetFunction))!;
+        private static readonly Dictionary<string, Command> commands =
+            AppDomain
+            .CurrentDomain
+            .GetAssemblies()
+            .SelectMany(assembly => assembly.GetTypes().Where(type => type.GetCustomAttributes<CommandAttribute>(true).Any()))
+            .ToDictionary(type => type.GetCustomAttribute<CommandAttribute>()!.Command, type => (Command)Activator.CreateInstance(type)!);
+
+        private static int reading = 0;
+
+        public static void StartReading()
         {
-            var stateNumber = await Task.Run(() => GetAsyncKeyState((byte)key));
-            return stateNumber != 0;
-        }
-    }
+            // Prevent this method from being ran multiple times
+            if (Interlocked.Exchange(ref reading, 1) == 1)
+                return;
 
-    public sealed class ReaderManager
-    {
-        private const char baseCharacter = '>';
-
-        private const char separator = ' ';
-
-        private MethodInfo commandFunctionHolderMethodInfo => typeof(CommandFunctionHolder).GetMethod(nameof(CommandFunctionHolder.GetFunction));
-
-        public void StartReading() 
-        {
-            while (true) 
+            Task.Run(async () =>
             {
-                var keyState = InteropHelper.GetKeyAsync(ConsoleKey.Enter);
-                string commandString = Console.ReadLine();
-                string commandStringName = commandString.Split(' ')[0];
-                if (keyState.Result) 
+                while (true)
                 {
-                    var command = GetCommand(commandStringName);
-                    if (command is not null) 
+                    await ReadAsync();
+                }
+            }).Wait();
+        }
+
+        private static async Task ReadAsync()
+        {
+            // Read console input
+            string? input = Console.ReadLine();
+            if (string.IsNullOrWhiteSpace(input))
+                return;
+
+            // Get input tokens
+            List<string> tokens = Tokenize(input);
+
+            // Try to find a matching command
+            if (!commands.TryGetValue(tokens[0], out Command? command))
+            {
+                _ = ServerLogger.LogAsync<WarningPrefix>("Command was not found.", TimeFormat.Half);
+                return;
+            }
+
+            // Parse arguments if any
+            object[]? arguments;
+            if (tokens.Count == 1)
+            {
+                arguments = Array.Empty<object>();
+            }
+            else
+            {
+                arguments = GetArguments(command, CollectionsMarshal.AsSpan(tokens)[1..]);
+                if (arguments is null)
+                    return;
+            }
+
+            // Invoke the command
+            CommandResult result;
+            if (arguments.FirstOrDefault() is OptionsArgument options)
+                result = await command.ExecuteAsync(options.Value, arguments[1..]);
+            else
+                result = await command.ExecuteAsync(Array.Empty<Option>(), arguments);
+
+            // Display result
+            if (result.Message is not null)
+            {
+                if (result.Success)
+                {
+                    _ = ServerLogger.LogAsync<NormalPrefix>(result.Message, TimeFormat.Half);
+                }
+                else
+                {
+                    _ = ServerLogger.LogAsync<ErrorPrefix>(result.Message, TimeFormat.Half);
+                }
+            }
+        }
+
+        private static List<string> Tokenize(string text)
+        {
+            var tokens = new List<string>();
+
+            int start = 0; // Start of next token, inclusive
+            for (int i = 0; i < text.Length; i++)
+            {
+                if (char.IsWhiteSpace(text[i]))
+                {
+                    if (i == start) // Ignore empty entries
                     {
-                        Span<object> indexes = new Span<object>(GetIndexes(commandString, command.Indexes).ToArray());
-                        var attributeIndex = indexes[0];
-                        var currentIndexes = indexes.Slice(1, indexes.Length - 1).ToArray();
-                        if (command is ICommandAction newCommand) 
-                        {
-                            MethodInfo genericsCommandFuntion = commandFunctionHolderMethodInfo.MakeGenericMethod(command.GetType());
-                            var newCommandAction = genericsCommandFuntion.Invoke(this, new object[] {newCommand});
-                            command = (ICommand)(ICommandAction)(newCommandAction);
-                        }
-
-                        string commandMessage;
-                        if(attributeIndex is ArgumentIndex argumentIndex)
-                            commandMessage = command.ExecuteCommand(argumentIndex.Value, currentIndexes).Result;
-                        else
-                            commandMessage = command.ExecuteCommand(new Argument[0], indexes.ToArray()).Result;
-
-                        if(commandMessage != String.Empty && commandMessage is not null)
-                            ServerLogger.Log<NormalPrefix>(commandMessage, TimeFormat.HALF);
+                        start++;
+                        continue;
                     }
+
+                    tokens.Add(text[start..i]);
+                    start = i + 1;
                 }
-            }
-        }
-
-        private IEnumerable<object> GetIndexes(string command, object[] baseIndexes) 
-        {
-            for (int i = 0; i < baseIndexes.Length; i++)
-            {
-                var currentIndex = (dynamic)baseIndexes[i];
-                yield return currentIndex.GetIndex(command, separator, i);
-            }
-        }
-
-        private ICommand GetCommand(string command) 
-        {
-            Type commandAttribute = typeof(CommandAttribute);
-            var commands = AppDomain.CurrentDomain.GetAssemblies().SelectMany(t => t.GetTypes().Where(a => a.GetCustomAttributes(commandAttribute, true).Length > 0)).ToArray();
-
-            for (int i = 0; i < commands.Length; i++)
-            {
-                var attribute = (CommandAttribute)commands[i].GetCustomAttribute(commandAttribute);
-                if (attribute.Command == command) 
+                else if (text[i] == '"')
                 {
-                    return GetTypeInstace<ICommand>(commands[i]);
+                    start = i + 1;
+                    for (i = start; i < text.Length && text[i] != '"'; i++) ; // Increment until next '"' or end of string
+                    tokens.Add(text[start..i]);
+                    start = i + 1;
                 }
             }
 
-            ServerLogger.Log<WarningPrefix>("Command was not found", TimeFormat.HALF);
-            return null;
+            // Add the rest
+            if (start < text.Length)
+                tokens.Add(text[start..]);
+
+            return tokens;
         }
 
-        private T GetTypeInstace<T>(Type objectType) 
+        private static object[]? GetArguments(Command command, Span<string> args)
         {
-            var currentObjectType = Type.GetType(objectType.FullName);
-            var currentCommand = Activator.CreateInstance(currentObjectType);
-            return (T)currentCommand;
+            var arguments = new object[args.Length];
+            for (int i = 0; i < arguments.Length; i++)
+            {
+                IFactory factory = command.Arguments[i];
+                object? argument = factory.Create(args[i]);
+                if (argument is not null)
+                {
+                    arguments[i] = argument!;
+                }
+                else
+                {
+                    _ = ServerLogger.LogAsync<ErrorPrefix>($"Received an invalid {factory.Name} argument '{args[i]}'.", TimeFormat.Half);
+                    return null;
+                }
+            }
+            return arguments;
         }
     }
 }

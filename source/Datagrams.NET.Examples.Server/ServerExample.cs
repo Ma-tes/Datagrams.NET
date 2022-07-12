@@ -1,37 +1,37 @@
-﻿using System.Net;
-using DatagramsNet.Logging;
-using DatagramsNet.Logging.Reading.CommandExecuting;
+﻿using DatagramsNet.Logging;
+using DatagramsNet.Logging.Reading.CommandExecution;
 using DatagramsNet.Logging.Reading.Commands;
 using DatagramsNet.Prefixes;
+using System.Diagnostics;
+using System.Net;
 
 namespace DatagramsNet.Examples.Server
 {
     internal sealed class ServerExample : ServerManager
     {
-        public override int PortNumber => base.PortNumber;
+        public int HandshakeCounter { get; set; }
 
-        private static ServerExample serverHolder;
+        private static ServerExample? serverHolder;
 
-        public int handShakeCounter = 0;
-
-        public ServerExample(string name, IPAddress ipAddress) : base(name, ipAddress) { serverHolder = this; }
-
-
-
-        public override async Task OnRecieveAsync(object datagram, EndPoint ipAddress) 
+        public ServerExample(string name, IPAddress ipAddress) : base(name, ipAddress)
         {
-            if (datagram is HandShakePacket newDatagram)
+            serverHolder = this;
+        }
+
+        public override async Task OnRecieveAsync(object datagram, EndPoint ipAddress)
+        {
+            if (datagram is HandshakePacket newDatagram)
             {
-                handShakeCounter++;
-                await ServerLogger.Log<NormalPrefix>($"Id: {handShakeCounter} packet: {newDatagram.GetType()} message: {newDatagram.Message.Message} array(length): {newDatagram.Message.Keys.Length}", TimeFormat.HALF);
+                HandshakeCounter++;
+                await ServerLogger.LogAsync<NormalPrefix>($"Id: {HandshakeCounter} packet: {newDatagram.GetType()} message: {newDatagram.Message.Message} array(length): {newDatagram.Message.Keys.Length}", TimeFormat.Half);
             }
         }
 
-        [CommandFunction<HelpCommand>()]
-        public static void WriteServerInformation() 
+        [CommandFunction<HelpCommand>]
+        public static void WriteServerInformation()
         {
-            var serverConnectionCount = serverHolder.serverSocket.Available;
-            Task.Run(async() => await ServerLogger.Log<NormalPrefix>($"Connected: {serverHolder.serverSocket.Connected}", TimeFormat.HALF));
+            Debug.Assert(serverHolder is not null);
+            _ = ServerLogger.LogAsync<NormalPrefix>($"Connected: {serverHolder.ServerSocket.Connected}", TimeFormat.Half);
         }
     }
 }

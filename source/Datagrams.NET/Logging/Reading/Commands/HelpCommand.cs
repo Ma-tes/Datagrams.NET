@@ -1,31 +1,37 @@
-﻿using DatagramsNet.Logging.Reading.Attributes;
-using DatagramsNet.Logging.Reading.Indexes;
-using DatagramsNet.Logging.Reading.Interfaces;
-using DatagramsNet.Prefixes;
+﻿using DatagramsNet.Logging.Reading.Arguments;
+using DatagramsNet.Logging.Reading.Attributes;
+using DatagramsNet.Logging.Reading.Models;
+using System.Collections.Immutable;
 
 namespace DatagramsNet.Logging.Reading.Commands
 {
     [Command("Help", "Help: [Command]")]
-    public sealed class HelpCommand : ICommand, ICommandAction
+    public sealed class HelpCommand : Command, ICommandAction
     {
-        public Argument[] Arguments => null;
+        public Action? CommandAction { get; set; }
 
-        public Action CommandAction { get; set; }
+        private static readonly ImmutableArray<IFactory> arguments = ImmutableArray.Create<IFactory>
+        (
+            CommandArgument.Factory
+        );
 
-        public object[] Indexes => new object[]
+        public HelpCommand() : base(arguments: arguments)
         {
-            new CommandIndex(),
-        };
+        }
 
-        public async Task<string> ExecuteCommand(Argument[] args, object[] indexes)
+        public override ValueTask<CommandResult> ExecuteAsync(Option[] options, object[] arguments)
         {
-            if (indexes[0] is CommandIndex commandIndex)
+            if (arguments.Length == 0)
             {
-                CommandAction.Invoke();
-                return $"{commandIndex.Name}: {commandIndex.Value}";
+                CommandArgument command = CommandArgument.AllCommandsArgument;
+                return OkTask($"{command.Name}: {command.Value}");
             }
-            await ServerLogger.Log<ErrorPrefix>("This command was found", TimeFormat.HALF);
-            return null;
+            else if (arguments[0] is CommandArgument command)
+            {
+                CommandAction?.Invoke();
+                return OkTask($"{command.Name}: {command.Value}");
+            }
+            return FailTask("This command was not found.");
         }
     }
 }

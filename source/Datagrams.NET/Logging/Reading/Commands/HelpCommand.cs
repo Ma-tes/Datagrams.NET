@@ -21,7 +21,6 @@ namespace DatagramsNet.Logging.Reading.Commands
         {
             if (indexes[0] is CommandIndex commandIndex)
             {
-                CommandAction.Invoke();
                 return $"{commandIndex.Name}: {commandIndex.Value}";
             }
             await ServerLogger.Log<ErrorPrefix>("This command was found", TimeFormat.HALF);

@@ -16,7 +16,7 @@ namespace DatagramsNet.Datagram
             await sendAction(newSubData.Result.ToArray());
         }
 
-        public static Memory<byte[]> WriteDatagram<T>(T datagram) where T : IDatagram
+        public static Memory<byte[]> WriteDatagram<T>(T datagram)
         {
             var datagramList = new List<byte[]>();
             var customProperties = datagram.GetType().GetFields();
@@ -26,9 +26,8 @@ namespace DatagramsNet.Datagram
 
                 if (value is not null)
                 {
-                    using var _binaryHelper = new BinaryHelper(value);
-                    _binaryHelper.Write();
-                    datagramList.Add(_binaryHelper.MemoryHolder);
+                    byte[] bytes = BinaryHelper.Write(value);
+                    datagramList.Add(bytes);
                 }
             }
             return datagramList.ToArray();
@@ -36,13 +35,8 @@ namespace DatagramsNet.Datagram
 
         public static object ReadDatagram(Memory<byte[]> datagram)
         {
-            int datagramId;
-            Type datagramType;
-            using (var idReader = new BinaryHelper(datagram.Span[0]))
-            {
-                datagramId = idReader.Read<int>();
-                datagramType = GetBaseDatagramType(datagramId, typeof(PacketAttribute));
-            }
+            int datagramId = BinaryHelper.Read<int>(datagram.Span[0]); 
+            Type datagramType = GetBaseDatagramType(datagramId, typeof(PacketAttribute));;
             return SetDatagramData(datagramType, datagram);
         }
 
@@ -52,12 +46,9 @@ namespace DatagramsNet.Datagram
             FieldInfo[] fields = datagram.GetType().GetFields();
             for (int i = 1; i < data.Length; i++)
             {
-                using (var reader = new BinaryHelper(data.Span[i]))
-                {
-                    Type fieldType = fields[i].FieldType;
-                    var fieldValue = read.MakeGenericMethod(fieldType).Invoke(reader, Array.Empty<object>());
-                    fields[i].SetValue(datagram, fieldValue);
-                }
+                Type fieldType = fields[i].FieldType;
+                var fieldValue = read.MakeGenericMethod(fieldType).Invoke(null, new object[] { data.Span[i] });
+                fields[i].SetValue(datagram, fieldValue);
             }
             return datagram;
         }

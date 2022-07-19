@@ -43,13 +43,17 @@ namespace DatagramsNet
             return true;
         }
 
-        private IEnumerable<int> GetSubBytesLength(Type datagramType) 
+        private int[] GetSubBytesLength(Type datagramType) 
         {
-            var fields = datagramType.GetFields();
-            for (int i = 0; i < fields.Length; i++)
+            var datagramInstance = Activator.CreateInstance(datagramType);
+            var membersInformation = BinaryHelper.GetMembersInformation(datagramInstance).ToArray();
+            var subBytes = new int[membersInformation.Length];
+            for (int i = 0; i < membersInformation.Length; i++)
             {
-                yield return Marshal.SizeOf(fields[i].FieldType);
+                int size = BinaryHelper.GetSizeOf(membersInformation[i].MemberValue);
+                subBytes[i] = size;
             }
+            return subBytes;
         }
 
         public async Task<ClientDatagram> GetDatagramDataAsync() 

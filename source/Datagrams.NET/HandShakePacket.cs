@@ -15,25 +15,23 @@ namespace DatagramsNet
     {
         public int IdMessage { get; set; }
 
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-        public string Message;
+        public int Message { get; set; } = 128;
 
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 1)]
-        public ConnectionKey<TimeSpan>[] Keys = new ConnectionKey<TimeSpan>[] { new ConnectionKey<TimeSpan>() { Key = TimeSpan.Zero } };
+        //public ConnectionKey<TimeSpan>[] Keys = new ConnectionKey<TimeSpan>[] { new ConnectionKey<TimeSpan>() { Key = TimeSpan.Zero } };
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     [Packet]
-    public sealed class HandShakePacket : IDatagram
+    public sealed class HandShakePacket
     {
-        public int ProperId { get; }
-
         [Field(0)]
         public int Id = 17;
 
-        [MarshalAs(UnmanagedType.LPStruct)]
         [Field(1)]
-        public ShakeMessage Message;
+        public string ShortMessage = "Test";
+
+        [Field(2)]
+        public ShakeMessage Message = new();
 
         public HandShakePacket() { }
 

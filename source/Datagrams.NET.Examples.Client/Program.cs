@@ -12,7 +12,8 @@ IPAddress ip = string.IsNullOrWhiteSpace(ipAddress) ? IPAddress.Loopback : IPAdd
 var client = new Client("TestClient", ip, Port);
 Parallel.For(0, DatagramCount, async i =>
 {
-    var datagram = new HandShakePacket(new ShakeMessage() { IdMessage = i, Message = "Client Message12345" });
+    var datagram = new HandShakePacket(new ShakeMessage() { IdMessage = i});
+    //var datagram = new HandShakePacket();
     await DatagramHelper.SendDatagramAsync(async data => await client.SendAsync(data), data: DatagramHelper.WriteDatagram(datagram));
 });
 Console.ReadKey(intercept: true);

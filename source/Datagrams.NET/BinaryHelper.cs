@@ -1,6 +1,4 @@
-﻿using DatagramsNet.Logging;
-using DatagramsNet.Prefixes;
-using DatagramsNet.Serializer;
+﻿using DatagramsNet.Serializer;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -9,14 +7,27 @@ namespace DatagramsNet
 {
     internal struct ObjectTableSize
     {
-        public object Value { get; }
+        public object? Value { get; }
 
         public int Size { get; }
 
-        public ObjectTableSize(object value, int size)
+        public ObjectTableSize(object? value, int size)
         {
             Value = value;
             Size = size;
+        }
+    }
+
+    public readonly struct MemberTableHolder
+    {
+        public byte[] Bytes { get; }
+
+        public int Length { get; }
+
+        public MemberTableHolder(byte[] bytes, int length) 
+        {
+            Bytes = bytes;
+            Length = length;
         }
     }
 
@@ -24,7 +35,8 @@ namespace DatagramsNet
     {
         public static byte[] Write(object @object)
         {
-            int size = GetSizeOf(@object);
+            byte[] byteHolder = new byte[0];
+            int size = GetSizeOf(@object, ref byteHolder);
             var fixedBuffer = new byte[size];
             var buffer = Serialization.SerializeObject(@object, size);
 
@@ -47,6 +59,14 @@ namespace DatagramsNet
             if (typeof(T) == typeof(string)) 
             {
                 return (T)(object)Encoding.ASCII.GetString(bytes);
+            }
+
+            var @object = Activator.CreateInstance<T>();
+            var members = GetMembersInformation(@object).ToArray();
+            if (members is not null) 
+            {
+                var @currentObject = (T)Serialization.DeserializeBytes(@object.GetType(), bytes);
+                return @currentObject;
             }
             return (T)Marshal.PtrToStructure(objectPointer, typeof(T));
         }
@@ -82,39 +102,80 @@ namespace DatagramsNet
         }
 
         //TODO: Create any type of caching
-        public static int GetSizeOf<T>(T @object)
+        public static int GetSizeOf<T>(T @object, ref byte[] bytes)
         {
             int size;
-            if (@object.GetType().IsClass && @object is not string)
+            if (@object is not null && @object.GetType().IsClass && @object is not string)
             {
                 var membersInformation = GetMembersInformation(@object!).ToArray();
-                size = GetTotalSizeOf(membersInformation.ToArray());
+                var sizeTable = GetSizeOfClass(membersInformation, bytes);
+                size = sizeTable;
             }
-            else
-                size = GetTotalSizeOf(new MemberInformation[] { new MemberInformation(@object, @object.GetType()) });
+            else 
+            {
+                var holder = GetTableHolderInformation(new MemberInformation(@object, @object.GetType()), bytes, 0);
+                size = holder.Length;
+                bytes = holder.Bytes;
+            }
             return size;
         }
 
-        private static int GetTotalSizeOf(MemberInformation[] membersInformation)
+        private static int GetSizeOfClass(MemberInformation[] members, byte[] bytes)
         {
+            byte[] bytesCopy = bytes;
             int totalSize = 0;
-            for (int i = 0; i < membersInformation.Length; i++)
+            int originalSize = 0;
+
+            foreach (var member in members)
             {
-                Type memberType = membersInformation[i].MemberType;
-                object memberObject = membersInformation[i].MemberValue;
-                int memberSize;
-                if (memberObject is Array) 
-                {
-                    var memberArray = ((Array)memberObject!);
-                    memberSize = (Marshal.SizeOf(GetTypeOfArrayElement(memberArray)) * (memberArray.Length));
-                }
-                else if(memberObject is string)
-                    memberSize = (((string)(memberObject)).Length * sizeof(byte));
-                else
-                    memberSize = Marshal.SizeOf(memberObject!);
-                totalSize = totalSize + memberSize;
+                var currentBytesCopy = bytes;
+                var tableHolder = GetTableHolderInformation(member, bytes, totalSize);
+
+                totalSize += tableHolder.Length;
+                originalSize += (tableHolder.Length + (bytesCopy.Length - tableHolder.Bytes.Length));
             }
-            return totalSize;//+ (totalSize / 2);
+            return originalSize;
+        }
+
+        private static MemberTableHolder GetTableHolderInformation(MemberInformation member, byte[] bytes, int start)
+        {
+            object memberObject = member.MemberValue;
+
+            int size;
+            if (memberObject is NullValue && bytes.Length > 1)
+            {
+                size = bytes[start];
+                var bytesCopy = bytes.ToList();
+                bytesCopy.RemoveAt(start);
+                bytes = bytesCopy.ToArray();
+
+                return new MemberTableHolder(bytes, size);
+            }
+
+            if (memberObject is string)
+            {
+                size = (((string)(memberObject)).Length * sizeof(byte));
+                if (bytes.Length > 1) 
+                {
+                    var bytesCopy = bytes.ToList();
+                    bytesCopy.RemoveAt(start);
+                    bytes = bytesCopy.ToArray();
+
+                    return new MemberTableHolder(bytes, size);
+                }
+                return new MemberTableHolder(bytes, size);
+            }
+
+            if (memberObject is Array)
+            {
+                var memberArray = ((Array)memberObject!);
+                size = (Marshal.SizeOf(GetTypeOfArrayElement(memberArray)) * (memberArray.Length));
+
+                return new MemberTableHolder(bytes, size);
+            }
+
+            size = Marshal.SizeOf(memberObject!);
+            return new MemberTableHolder(bytes, size);
         }
 
         private static Type GetTypeOfArrayElement(Array objects) => objects.GetType().GetGenericArguments()[0];

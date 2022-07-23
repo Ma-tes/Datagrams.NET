@@ -1,6 +1,7 @@
-﻿using DatagramsNet.Serializer.Attributes;
+﻿using DatagramsNet.Datagram;
+using DatagramsNet.Interfaces;
+using DatagramsNet.Serializer.Attributes;
 using DatagramsNet.Serializer.Interfaces;
-using DatagramsNet.Serializer.Types;
 using System.Reflection;
 
 namespace DatagramsNet.Serializer
@@ -27,6 +28,42 @@ namespace DatagramsNet.Serializer
                 return classBytes.ToArray();
             }
             return null;
+        }
+
+        public static object DeserializeBytes(Type datagramType, byte[] datagramData) 
+        {
+            var subData = GetSubDatagrams(datagramType, datagramData);
+            var bytes = new List<byte[]>();
+            for (int i = 0; i < subData.Length; i++)
+            {
+                bytes.Add(subData[i].Bytes);
+            }
+
+            return DatagramHelper.SetObjectData(datagramType, bytes.ToArray().AsMemory());
+        }
+
+        private static SubDatagramTable[] GetSubDatagrams(Type datagramType, byte[] datagramData)
+        {
+            Span<byte> spanBytes = datagramData;
+            var datagramInstance = Activator.CreateInstance(datagramType);
+
+            var membersInformation = BinaryHelper.GetMembersInformation(datagramInstance).ToArray();
+            var datagramTables = new SubDatagramTable[membersInformation.Length];
+
+            int lastSize = 0;
+            for (int i = 0; i < membersInformation.Length; i++)
+            {
+                spanBytes = spanBytes.Slice(lastSize);
+                byte[] subBytes = spanBytes.ToArray();
+                int size = BinaryHelper.GetSizeOf(membersInformation[i].MemberValue, ref subBytes);
+
+                var newBytes = subBytes[0..size];
+                datagramTables[i] = new SubDatagramTable(newBytes, size);
+
+                lastSize = size;
+                spanBytes = subBytes;
+            }
+            return datagramTables;
         }
 
         private static IManaged TryGetManagedType(Type objectType) 

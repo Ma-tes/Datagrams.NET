@@ -1,12 +1,24 @@
 ﻿using System.Net;
 using System.Net.Sockets;
-using System.Runtime.InteropServices;
 using DatagramsNet.Attributes;
 using DatagramsNet.Datagram;
 using DatagramsNet.Logging;
+using DatagramsNet.Serializer;
 
 namespace DatagramsNet
 {
+    public readonly struct SubDatagramTable 
+    {
+        public byte[] Bytes { get; }
+
+        public int Length { get; }
+
+        public SubDatagramTable(byte[] bytes, int length) 
+        {
+            Bytes = bytes;
+            Length = length;
+        }
+    }
 
     public sealed class UdpReciever
     {
@@ -29,31 +41,14 @@ namespace DatagramsNet
             {
                 var data = await clientData();
                 Type dataType = DatagramHelper.GetBaseDatagramType(data.Datagram[0], typeof(PacketAttribute));
-                var newData = DatagramIdentificator.DeserializeDatagram(data.Datagram, GetSubBytesLength(dataType).ToArray());
 
-                if (newData is not null)
+                var datagram = Serialization.DeserializeBytes(dataType, data.Datagram);
+                if (datagram is not null) 
                 {
-                    object datagram = DatagramHelper.ReadDatagram(newData.ToArray().AsMemory());
-                    if (datagram is not null) 
-                    {
-                        await datagramAction(datagram, data.Client);
-                    }
+                    await datagramAction(datagram, data.Client);
                 }
             }
             return true;
-        }
-
-        private int[] GetSubBytesLength(Type datagramType) 
-        {
-            var datagramInstance = Activator.CreateInstance(datagramType);
-            var membersInformation = BinaryHelper.GetMembersInformation(datagramInstance).ToArray();
-            var subBytes = new int[membersInformation.Length];
-            for (int i = 0; i < membersInformation.Length; i++)
-            {
-                int size = BinaryHelper.GetSizeOf(membersInformation[i].MemberValue);
-                subBytes[i] = size;
-            }
-            return subBytes;
         }
 
         public async Task<ClientDatagram> GetDatagramDataAsync() 

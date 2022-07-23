@@ -1,5 +1,4 @@
-﻿
-using DatagramsNet.Serializer.Attributes;
+﻿using DatagramsNet.Serializer.Attributes;
 
 namespace DatagramsNet.Serializer.Types
 {
@@ -11,6 +10,7 @@ namespace DatagramsNet.Serializer.Types
             var baseSerialize = base.Serialize<TParent>(@object);
             if (baseSerialize is not null)
                 return baseSerialize;
+            //TODO: Implement serialization of Array
             return null;
         }
     }

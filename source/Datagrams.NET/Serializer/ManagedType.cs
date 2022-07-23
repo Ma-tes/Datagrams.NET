@@ -26,8 +26,6 @@ namespace DatagramsNet.Serializer
 
         protected static List<SerializeTable> CurrentTable { get; set; }
 
-        public ManagedType() { }
-
         public virtual byte[] Serialize<TParent>(ObjectTableSize @object) 
         {
             var objectKey = new ManagedObjectKey(typeof(TParent), nameof(@object.Value));

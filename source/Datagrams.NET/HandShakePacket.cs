@@ -1,6 +1,6 @@
-﻿using DatagramsNet.Interfaces;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using DatagramsNet.Attributes;
+using DatagramsNet.Interfaces;
 
 namespace DatagramsNet
 {
@@ -15,23 +15,23 @@ namespace DatagramsNet
     {
         public int IdMessage { get; set; }
 
-        public int Message { get; set; } = 128;
+        public string Message { get; set; } = default;
 
         //public ConnectionKey<TimeSpan>[] Keys = new ConnectionKey<TimeSpan>[] { new ConnectionKey<TimeSpan>() { Key = TimeSpan.Zero } };
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     [Packet]
-    public sealed class HandShakePacket
+    public sealed class HandShakePacket : IDatagram
     {
         [Field(0)]
-        public int Id = 17;
+        public int Id => 17;
 
         [Field(1)]
-        public string ShortMessage = "Test";
+        public string ShortMessage { get; set; } = "Test";
 
         [Field(2)]
-        public ShakeMessage Message = new();
+        public ShakeMessage Message { get; set; } = new();
 
         public HandShakePacket() { }
 

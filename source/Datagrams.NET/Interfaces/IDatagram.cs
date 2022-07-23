@@ -3,6 +3,6 @@ namespace DatagramsNet.Interfaces
 {
     public interface IDatagram
     {
-        public int ProperId { get; }
+        public int Id { get; }
     }
 }

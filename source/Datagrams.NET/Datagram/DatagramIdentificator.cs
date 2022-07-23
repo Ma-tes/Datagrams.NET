@@ -12,16 +12,18 @@
             DatagramData = binaryData;
         }
 
-        public IEnumerable<byte> SerializeDatagram()
+        public byte[] SerializeDatagram()
         {
+            var datagramBytes = new List<byte>();
             for (int i = 0; i < DatagramData.Length; i++)
             {
                 for (int j = 0; j < DatagramData.Span[i].Length; j++)
                 {
                     var data = DatagramData.Span[i][j];
-                    yield return data;
+                    datagramBytes.Add(data);
                 }
             }
+            return datagramBytes.ToArray();
         }
 
         public static IEnumerable<byte[]> DeserializeDatagram(byte[] subData, int[] subBytesLength)

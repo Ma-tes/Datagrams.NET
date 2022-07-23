@@ -16,14 +16,12 @@ namespace DatagramsNet.Examples.Server
 
         public ServerExample(string name, IPAddress ipAddress) : base(name, ipAddress) { serverHolder = this; }
 
-
-
         public override async Task OnRecieveAsync(object datagram, EndPoint ipAddress) 
         {
             if (datagram is HandShakePacket newDatagram)
             {
                 handShakeCounter++;
-                await ServerLogger.Log<NormalPrefix>($"Id: {handShakeCounter} packet: {newDatagram.GetType()} message: {newDatagram.Message.Message} array(length): {newDatagram.Message}", TimeFormat.HALF);
+                await ServerLogger.Log<NormalPrefix>($"Id: {handShakeCounter} packet: {newDatagram.GetType()} testMessage: {newDatagram.ShortMessage} message: {newDatagram.Message.Message} array(length): {newDatagram.Message}", TimeFormat.HALF);
                 //await ServerLogger.Log<NormalPrefix>($"Id: {handShakeCounter} packet: {newDatagram.GetType()} message: {newDatagram.ShortMessage}", TimeFormat.HALF);
             }
         }

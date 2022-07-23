@@ -120,22 +120,6 @@ namespace DatagramsNet
             return size;
         }
 
-        private static int GetSizeOfClass(MemberInformation[] members, byte[] bytes)
-        {
-            byte[] bytesCopy = bytes;
-            int totalSize = 0;
-            int originalSize = 0;
-
-            foreach (var member in members)
-            {
-                var currentBytesCopy = bytes;
-                var tableHolder = GetTableHolderInformation(member, bytes, totalSize);
-
-                totalSize += tableHolder.Length;
-                originalSize += (tableHolder.Length + (bytesCopy.Length - tableHolder.Bytes.Length));
-            }
-            return originalSize;
-        }
 
         private static MemberTableHolder GetTableHolderInformation(MemberInformation member, byte[] bytes, int start)
         {
@@ -169,13 +153,41 @@ namespace DatagramsNet
             if (memberObject is Array)
             {
                 var memberArray = ((Array)memberObject!);
-                size = (Marshal.SizeOf(GetTypeOfArrayElement(memberArray)) * (memberArray.Length));
+                size = GetSizeOfArray(memberArray);
 
                 return new MemberTableHolder(bytes, size);
             }
 
             size = Marshal.SizeOf(memberObject!);
             return new MemberTableHolder(bytes, size);
+        }
+        private static int GetSizeOfClass(MemberInformation[] members, byte[] bytes)
+        {
+            byte[] bytesCopy = bytes;
+            int totalSize = 0;
+            int originalSize = 0;
+
+            foreach (var member in members)
+            {
+                var currentBytesCopy = bytes;
+                var tableHolder = GetTableHolderInformation(member, bytes, totalSize);
+
+                totalSize += tableHolder.Length;
+                originalSize += (tableHolder.Length + (bytesCopy.Length - tableHolder.Bytes.Length));
+            }
+            return originalSize;
+        }
+
+        private static int GetSizeOfArray(Array array) 
+        {
+            int totalSize = 0;
+            for (int i = 0; i < array.Length; i++)
+            {
+                byte[] byteHolder = new byte[0];
+                int currentSize = BinaryHelper.GetSizeOf(array.GetValue(i), ref byteHolder);
+                totalSize += currentSize;
+            }
+            return totalSize;
         }
 
         private static Type GetTypeOfArrayElement(Array objects) => objects.GetType().GetGenericArguments()[0];

@@ -4,10 +4,11 @@ using DatagramsNet.Interfaces;
 
 namespace DatagramsNet
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 8)]
     public struct ConnectionKey<T> 
     {
         public T Key { get; set; }
+
+        public string Message { get; set; }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -17,7 +18,8 @@ namespace DatagramsNet
 
         public string Message { get; set; } = default;
 
-        //public ConnectionKey<TimeSpan>[] Keys = new ConnectionKey<TimeSpan>[] { new ConnectionKey<TimeSpan>() { Key = TimeSpan.Zero } };
+        //public ConnectionKey<TimeSpan>[] Keys = new ConnectionKey<TimeSpan>[] { new ConnectionKey<TimeSpan>() { Key = TimeSpan.Zero, Message = "TestMessage"} };
+        public string[] Keys = new string[] { "Test", "Serialization"};
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]

@@ -72,7 +72,7 @@ namespace DatagramsNet.Serializer
             for (int i = 0; i < assemblies.Length; i++)
             {
                 var attribute = (SerializeTypeAttribute)assemblies[i].GetCustomAttribute(typeof(SerializeTypeAttribute))!;
-                if (attribute.SerializerType == objectType) 
+                if (attribute.SerializerType == objectType || attribute.SerializerType == objectType.BaseType) 
                 {
                     var newManagedType = (IManaged)(Activator.CreateInstance((assemblies[i])))!;
                     return newManagedType;

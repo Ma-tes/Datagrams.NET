@@ -6,20 +6,20 @@ namespace DatagramsNet.Logging
     [Flags]
     public enum TimeFormat
     {
-        FULL = 0,
-        HALF = 1,
-        NONE = 2
+        Full = 0,
+        Half = 1,
+        None = 2
     }
 
     public static class ServerLogger
     {
-        private static IList<IPrefix> prefixes = new List<IPrefix>();
+        private static readonly List<IPrefix> prefixes = new();
 
-        private static ConcurrentQueue<Message> queueMessages = new();
+        private static readonly ConcurrentQueue<Message> queueMessages = new();
 
-        public static async Task Log<TSource>(string message, TimeFormat timeFormat = TimeFormat.HALF, int delay = 0) where TSource : IPrefix, new()
+        public static async Task LogAsync<TSource>(string message, TimeFormat timeFormat = TimeFormat.Half, int delay = 0) where TSource : IPrefix, new()
         {
-            var prefix = await GetPrefix<TSource>();
+            var prefix = GetPrefix<TSource>();
             var dateTime = await GetDateText(timeFormat);
             lock (queueMessages)
             {
@@ -34,14 +34,11 @@ namespace DatagramsNet.Logging
             {
                 while (true)
                 {
-                    if (queueMessages.Count != 0)
+                    if (!queueMessages.IsEmpty && queueMessages.TryDequeue(out Message message))
                     {
-
-                        Message newMessage = new Message();
-                        queueMessages.TryDequeue(out newMessage);
-                        if (newMessage.Prefix is not null)
-                            await newMessage.Prefix.WritePrefixAsync();
-                        await Console.Out.WriteLineAsync(newMessage.SingleMessage);
+                        if (message.Prefix is not null)
+                            await message.Prefix.WritePrefixAsync();
+                        await Console.Out.WriteLineAsync(message.SingleMessage);
                     }
                 }
             });
@@ -49,12 +46,12 @@ namespace DatagramsNet.Logging
 
         private static Task<string> GetDateText(TimeFormat timeFormat)
         {
-            if (timeFormat == TimeFormat.NONE)
+            if (timeFormat == TimeFormat.None)
                 return Task.FromResult(string.Empty);
-            return timeFormat == TimeFormat.HALF ? Task.FromResult(DateTime.Now.ToShortTimeString()) : Task.FromResult(DateTime.Now.ToLongTimeString());
+            return timeFormat == TimeFormat.Half ? Task.FromResult(DateTime.Now.ToShortTimeString()) : Task.FromResult(DateTime.Now.ToLongTimeString());
         }
 
-        public static async Task<TSource> GetPrefix<TSource>() where TSource : IPrefix, new()
+        public static TSource GetPrefix<TSource>() where TSource : IPrefix, new()
         {
             for (int i = 0; i < prefixes.Count; i++)
             {
@@ -62,7 +59,7 @@ namespace DatagramsNet.Logging
                     return (TSource)prefixes[i];
             }
             prefixes.Add(new TSource());
-            return (TSource)prefixes[prefixes.Count - 1];
+            return (TSource)prefixes[^1];
         }
     }
 }

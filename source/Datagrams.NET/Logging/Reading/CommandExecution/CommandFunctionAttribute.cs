@@ -1,6 +1,6 @@
-﻿using DatagramsNet.Logging.Reading.Interfaces;
+﻿using DatagramsNet.Logging.Reading.Models;
 
-namespace DatagramsNet.Logging.Reading.CommandExecuting
+namespace DatagramsNet.Logging.Reading.CommandExecution
 {
     [AttributeUsage(AttributeTargets.Method)]
     public class CommandFunctionAttribute<T> : Attribute where T : ICommandAction

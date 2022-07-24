@@ -1,37 +1,39 @@
-﻿using DatagramsNet.Logging.Reading.Attributes;
-using DatagramsNet.Logging.Reading.Indexes;
-using DatagramsNet.Logging.Reading.Interfaces;
-using DatagramsNet.Prefixes;
+﻿using DatagramsNet.Logging.Reading.Arguments;
+using DatagramsNet.Logging.Reading.Attributes;
+using DatagramsNet.Logging.Reading.Models;
+using System.Collections.Immutable;
 
 namespace DatagramsNet.Logging.Reading.Commands
 {
-    [Command("Test", "Test: [Arugments] [FilePath]")]
-    public sealed class TestCommand : ICommand
+    [Command("Test", "Test: [Arguments] [FilePath]")]
+    public sealed class TestCommand : Command
     {
-        public Argument[] Arguments => new Argument[]
-        {
-            new Argument('a'),
-            new Argument('A'),
-            new Argument('c'),
-            new Argument('C'),
-        };
+        private static readonly ImmutableArray<Option> options = ImmutableArray.Create
+            (
+            new Option('a'),
+            new Option('A'),
+            new Option('c'),
+            new Option('C')
+            );
 
-        public object[] Indexes => new object[]
-        {
-            new ArgumentIndex() {Command = this },
-            new FileIndex(),
-        };
+        private static readonly ImmutableArray<IFactory> arguments = ImmutableArray.Create<IFactory>
+            (
+            OptionsArgument.Factory(options),
+            FileArgument.Factory
+            );
 
-        public async Task<string> ExecuteCommand(Argument[] args, object[] indexes)
+        public TestCommand() : base(options, arguments)
         {
-            if (indexes[0] is FileIndex newIndex)
+        }
+
+        public override ValueTask<CommandResult> ExecuteAsync(Option[] options, object[] arguments)
+        {
+            if (arguments[0] is FileArgument fileArgument)
             {
-                var message = $"Your {newIndex.Name} is maybe rigth if comes here: {newIndex.Value}";
-                return message;
+                var message = $"Your {fileArgument.Name} might be correct if it comes here: {fileArgument.Value}";
+                return OkTask(message);
             }
-            else
-                await ServerLogger.Log<ErrorPrefix>("Sorry but your syntax is wrong", TimeFormat.HALF);
-            return string.Empty;
+            return FailTask("Wrong syntax.");
         }
     }
 }

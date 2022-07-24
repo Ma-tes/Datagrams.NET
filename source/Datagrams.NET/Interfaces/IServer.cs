@@ -5,18 +5,18 @@ namespace DatagramsNet.Interfaces
 {
     public interface IServer
     {
-        public string Name { get; set; }
+        public string Name { get; }
 
-        public IPAddress IPAddress { get; set; }
+        public IPAddress IPAddress { get; }
 
-        public Socket serverSocket { get; set; }
+        public Socket ServerSocket { get; }
 
-        public List<Client> Clients { get; set; }
+        public List<Client> Clients { get; }
 
         public IPEndPoint EndPoint { get; }
 
-        public async Task<bool> StartServer() => false;
+        public Task<bool> StartServerAsync() => Task.FromResult(false);
 
-        public int GetRecievingDataLength() => serverSocket.Available;
+        public int GetRecievingDataLength() => ServerSocket.Available;
     }
 }

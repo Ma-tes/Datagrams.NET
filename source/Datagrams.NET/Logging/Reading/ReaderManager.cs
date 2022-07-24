@@ -40,6 +40,7 @@ namespace DatagramsNet.Logging.Reading
 
         private static async Task ReadAsync()
         {
+            Console.Write($"{PrefixCharacter} ");
             // Read console input
             string? input = Console.ReadLine();
             if (string.IsNullOrWhiteSpace(input))

@@ -9,4 +9,4 @@ ReaderManager.StartReading();
 Console.WriteLine("Listening for clients...");
 Console.WriteLine("Press any key to stop");
 Console.ReadKey(intercept: true);
-Console.WriteLine($"Handshake counter: {server.HandshakeCounter}");
+Console.WriteLine($"Handshake counter: {server.handShakeCounter}");

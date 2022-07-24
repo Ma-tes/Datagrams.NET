@@ -8,7 +8,12 @@ namespace DatagramsNet.Logging.Reading.Models
         public ImmutableArray<Option> Options { get; }
         public ImmutableArray<IFactory> Arguments { get; }
 
-        public abstract ValueTask<CommandResult> ExecuteAsync(Option[] options, object[] arguments);
+        public virtual ValueTask<CommandResult> ExecuteAsync(Option[] options, object[] arguments) 
+        {
+            if (arguments.Length == 0)
+                return FailTask("Sorry but your syntax is wrong");
+            return default;
+        }
 
         protected Command(ImmutableArray<Option>? options = null, ImmutableArray<IFactory>? arguments = null)
         {

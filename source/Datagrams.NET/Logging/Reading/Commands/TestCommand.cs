@@ -28,6 +28,10 @@ namespace DatagramsNet.Logging.Reading.Commands
 
         public override ValueTask<CommandResult> ExecuteAsync(Option[] options, object[] arguments)
         {
+            var baseResult = base.ExecuteAsync(options, arguments);
+            if (baseResult != default)
+                return baseResult;
+
             if (arguments[0] is FileArgument fileArgument)
             {
                 var message = $"Your {fileArgument.Name} might be correct if it comes here: {fileArgument.Value}";

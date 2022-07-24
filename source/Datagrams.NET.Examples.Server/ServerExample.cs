@@ -1,7 +1,5 @@
 ﻿using System.Net;
 using DatagramsNet.Logging;
-using DatagramsNet.Logging.Reading.CommandExecuting;
-using DatagramsNet.Logging.Reading.Commands;
 using DatagramsNet.Prefixes;
 
 namespace DatagramsNet.Examples.Server
@@ -21,20 +19,13 @@ namespace DatagramsNet.Examples.Server
             if (datagram is HandShakePacket newDatagram)
             {
                 handShakeCounter++;
-                await ServerLogger.Log<NormalPrefix>($"Id: {handShakeCounter} packet: {newDatagram.GetType()} testMessage: {newDatagram.ShortMessage}", TimeFormat.HALF);
+                await ServerLogger.LogAsync<NormalPrefix>($"Id: {handShakeCounter} packet: {newDatagram.GetType()} testMessage: {newDatagram.ShortMessage}", TimeFormat.Half);
                 for (int i = 0; i < newDatagram.Message.Keys.Length; i++)
                 {
-                    await ServerLogger.Log<NormalPrefix>($"Key:[{i}] -> {newDatagram.Message.Keys[i]}", TimeFormat.HALF);
+                    await ServerLogger.LogAsync<NormalPrefix>($"Key:[{i}] -> {newDatagram.Message.Keys[i]}", TimeFormat.Half);
                 }
                 //await ServerLogger.Log<NormalPrefix>($"Id: {handShakeCounter} packet: {newDatagram.GetType()} message: {newDatagram.ShortMessage}", TimeFormat.HALF);
             }
-        }
-
-        [CommandFunction<HelpCommand>()]
-        public static void WriteServerInformation() 
-        {
-            var serverConnectionCount = serverHolder.serverSocket.Available;
-            Task.Run(async() => await ServerLogger.Log<NormalPrefix>($"Connected: {serverHolder.serverSocket.Connected}", TimeFormat.HALF));
         }
     }
 }

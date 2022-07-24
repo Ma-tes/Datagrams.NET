@@ -18,6 +18,8 @@ namespace DatagramsNet.Serializer
     internal static class ManagedTypeFactory 
     {
         public static byte[] Serialize<TParent>(IManaged managedType, ObjectTableSize @object) => managedType.Serialize<TParent>(@object);
+
+        public static T Deserialize<T>(IManaged managedType, byte[] bytes) => managedType.Deserialize<T>(bytes);
     }
 
     internal abstract class ManagedType : IManaged
@@ -43,5 +45,8 @@ namespace DatagramsNet.Serializer
 
             return null;
         }
+
+        //Implement ability to check if result is not already cached
+        public virtual T Deserialize<T>(byte[] bytes) { return default; }
     }
 }

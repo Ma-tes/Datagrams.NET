@@ -33,6 +33,8 @@ namespace DatagramsNet
 
     public static class BinaryHelper 
     {
+        private static MethodInfo deserialization = typeof(ManagedTypeFactory).GetMethod(nameof(ManagedTypeFactory.Deserialize));
+
         public static byte[] Write(object @object)
         {
             byte[] byteHolder = new byte[0];
@@ -56,9 +58,11 @@ namespace DatagramsNet
             IntPtr objectPointer = GetIntPtr(bytes.Length);
             Marshal.Copy(bytes, 0, objectPointer, bytes.Length);
 
-            if (typeof(T) == typeof(string)) 
+            var managedType = Serialization.TryGetManagedType(typeof(T));
+            if (managedType is not null) 
             {
-                return (T)(object)Encoding.ASCII.GetString(bytes);
+                var currentObject = (T)(deserialization.MakeGenericMethod(typeof(T)).Invoke(null, new object[] { managedType, bytes}))!;
+                return currentObject;
             }
 
             var @object = Activator.CreateInstance<T>();
@@ -105,7 +109,7 @@ namespace DatagramsNet
         public static int GetSizeOf<T>(T @object, ref byte[] bytes)
         {
             int size;
-            if (@object is not null && @object.GetType().IsClass && @object is not string)
+            if (@object is not null && @object.GetType().IsClass && @object is not string && @object.GetType().BaseType != typeof(Array))
             {
                 var membersInformation = GetMembersInformation(@object!).ToArray();
                 var sizeTable = GetSizeOfClass(membersInformation, bytes);
@@ -124,14 +128,13 @@ namespace DatagramsNet
         private static MemberTableHolder GetTableHolderInformation(MemberInformation member, byte[] bytes, int start)
         {
             object memberObject = member.MemberValue;
+            var managedType = Serialization.TryGetManagedType(member.MemberType);
 
             int size;
-            if (memberObject is NullValue && bytes.Length > 1)
+            if ((memberObject is NullValue || managedType is not null) && bytes.Length > 1)
             {
                 size = bytes[start];
-                var bytesCopy = bytes.ToList();
-                bytesCopy.RemoveAt(start);
-                bytes = bytesCopy.ToArray();
+                bytes = RemoveSizeIndex(bytes, start);
 
                 return new MemberTableHolder(bytes, size);
             }
@@ -139,25 +142,15 @@ namespace DatagramsNet
             if (memberObject is string)
             {
                 size = (((string)(memberObject)).Length * sizeof(byte));
-                if (bytes.Length > 1) 
-                {
-                    var bytesCopy = bytes.ToList();
-                    bytesCopy.RemoveAt(start);
-                    bytes = bytesCopy.ToArray();
-
-                    return new MemberTableHolder(bytes, size);
-                }
                 return new MemberTableHolder(bytes, size);
             }
 
-            if (memberObject is Array)
+            if (memberObject is Array || member.MemberType.BaseType == typeof(Array))
             {
                 var memberArray = ((Array)memberObject!);
-                size = GetSizeOfArray(memberArray);
-
+                size = GetSizeOfArray(memberArray, ref bytes);
                 return new MemberTableHolder(bytes, size);
             }
-
             size = Marshal.SizeOf(memberObject!);
             return new MemberTableHolder(bytes, size);
         }
@@ -178,16 +171,31 @@ namespace DatagramsNet
             return originalSize;
         }
 
-        private static int GetSizeOfArray(Array array) 
+        private static int GetSizeOfArray(Array array, ref byte[] bytes) 
         {
             int totalSize = 0;
             for (int i = 0; i < array.Length; i++)
             {
-                byte[] byteHolder = new byte[0];
-                int currentSize = BinaryHelper.GetSizeOf(array.GetValue(i), ref byteHolder);
+                int currentSize = BinaryHelper.GetSizeOf(array.GetValue(i), ref bytes);
                 totalSize += currentSize;
             }
             return totalSize;
+        }
+
+        private static byte[] RemoveSizeIndex(byte[] bytes, int index) 
+        {
+            var result = new byte[bytes.Length - 1];
+            Span<byte> spanResult = result.AsSpan();
+            Span<byte> byteSpan = bytes;
+
+            if (index != 0) 
+            {
+                Span<byte> firstSpan = byteSpan.Slice(0, (index));
+                firstSpan.CopyTo(spanResult);
+            }
+            Span<byte> secondSpan = byteSpan.Slice((index + 1), (bytes.Length - (index + 1)));
+            secondSpan.CopyTo(spanResult);
+            return result;
         }
 
         private static Type GetTypeOfArrayElement(Array objects) => objects.GetType().GetGenericArguments()[0];

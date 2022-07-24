@@ -1,5 +1,4 @@
 ﻿using DatagramsNet.Datagram;
-using DatagramsNet.Interfaces;
 using DatagramsNet.Serializer.Attributes;
 using DatagramsNet.Serializer.Interfaces;
 using System.Reflection;
@@ -21,7 +20,7 @@ namespace DatagramsNet.Serializer
 
     internal static class Serialization
     {
-        private static MethodInfo serialization = typeof(ManagedTypeFactory).GetMethod(nameof(ManagedTypeFactory.Serialize));
+        private static MethodInfo serialization = typeof(ManagedTypeFactory).GetMethod(nameof(ManagedTypeFactory.Serialize))!;
 
         private static ManagedTypesHolder[] managedTypes;
 
@@ -33,7 +32,7 @@ namespace DatagramsNet.Serializer
             if (managedType is not null) 
             {
                 var table = new ObjectTableSize(@object, size);
-                var bytes = (byte[])serialization.MakeGenericMethod(@object.GetType().BaseType).Invoke(null, new object[] { managedType, table });
+                var bytes = (byte[])serialization.MakeGenericMethod(@object.GetType().BaseType).Invoke(null, new object[] { managedType, table })!;
                 return bytes;
             }
 
@@ -85,8 +84,8 @@ namespace DatagramsNet.Serializer
 
         public static IManaged TryGetManagedType(Type objectType) 
         {
-            if (managedTypePairs.ContainsKey(objectType))
-                return managedTypePairs.GetValueOrDefault(objectType)!;
+            //if (managedTypePairs.ContainsKey(objectType))
+                //return managedTypePairs.GetValueOrDefault(objectType)!;
             if (managedTypes is null)
                 managedTypes = GetManagedTypes().ToArray();
 
@@ -95,7 +94,8 @@ namespace DatagramsNet.Serializer
                 if (managedTypes[i].Attribute.SerializerType == objectType || managedTypes[i].Attribute.SerializerType == objectType.BaseType) 
                 {
                     var newManagedType = (IManaged)(Activator.CreateInstance((managedTypes[i].Type)))!;
-                    managedTypePairs.Add(objectType, newManagedType);
+                    //if (!(managedTypePairs.ContainsKey(objectType)))
+                        //managedTypePairs.Add(objectType, newManagedType);
                     return newManagedType;
                 }
             }

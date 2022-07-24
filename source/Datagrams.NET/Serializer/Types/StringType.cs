@@ -20,5 +20,10 @@ namespace DatagramsNet.Serializer.Types
             //CurrentTable.Add(new SerializeTable(@object.Value, bytes));
             return bytesHolder.ToArray();
         }
+
+        public override T Deserialize<T>(byte[] bytes)
+        {
+            return (T)(object)Encoding.ASCII.GetString(bytes);
+        }
     }
 }

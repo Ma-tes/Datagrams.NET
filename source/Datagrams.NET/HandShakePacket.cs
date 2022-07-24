@@ -19,7 +19,7 @@ namespace DatagramsNet
         public string Message { get; set; } = default;
 
         //public ConnectionKey<TimeSpan>[] Keys = new ConnectionKey<TimeSpan>[] { new ConnectionKey<TimeSpan>() { Key = TimeSpan.Zero, Message = "TestMessage"} };
-        public string[] Keys = new string[] { "Test", "Serialization"};
+        public string[] Keys { get; set; } = new string[] { "Test", "Serialization", "AnotherTest"};
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]

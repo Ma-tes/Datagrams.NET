@@ -4,7 +4,7 @@ namespace DatagramsNet.Datagram
 {
     public static class DatagramHelper
     {
-        private static MethodInfo read = typeof(BinaryHelper).GetMethod(nameof(BinaryHelper.Read));
+        private static MethodInfo read = typeof(BinaryHelper).GetMethod(nameof(BinaryHelper.Read))!;
 
         public static async Task SendDatagramAsync(Func<byte[], Task> sendAction, ReadOnlyMemory<byte[]> data)
         {

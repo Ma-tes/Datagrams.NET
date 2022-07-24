@@ -6,9 +6,26 @@ using System.Reflection;
 
 namespace DatagramsNet.Serializer
 {
+    internal readonly struct ManagedTypesHolder
+    {
+        public Type Type { get; }
+
+        public SerializeTypeAttribute Attribute { get; }
+
+        public ManagedTypesHolder(Type type, SerializeTypeAttribute attribute) 
+        {
+            Type = type;
+            Attribute = attribute;
+        }
+    }
+
     internal static class Serialization
     {
         private static MethodInfo serialization = typeof(ManagedTypeFactory).GetMethod(nameof(ManagedTypeFactory.Serialize));
+
+        private static ManagedTypesHolder[] managedTypes;
+
+        private static Dictionary<Type, IManaged> managedTypePairs = new();
 
         public static byte[] SerializeObject(object @object, int size)
         {
@@ -42,7 +59,7 @@ namespace DatagramsNet.Serializer
             return DatagramHelper.SetObjectData(datagramType, bytes.ToArray().AsMemory());
         }
 
-        private static SubDatagramTable[] GetSubDatagrams(Type datagramType, byte[] datagramData)
+        public static SubDatagramTable[] GetSubDatagrams(Type datagramType, byte[] datagramData)
         {
             Span<byte> spanBytes = datagramData;
             var datagramInstance = Activator.CreateInstance(datagramType);
@@ -66,19 +83,33 @@ namespace DatagramsNet.Serializer
             return datagramTables;
         }
 
-        private static IManaged TryGetManagedType(Type objectType) 
+        public static IManaged TryGetManagedType(Type objectType) 
         {
-            var assemblies = AppDomain.CurrentDomain.GetAssemblies().SelectMany(t => t.GetTypes().Where(a => a.GetCustomAttributes(typeof(SerializeTypeAttribute), true).Length > 0)).ToArray();
-            for (int i = 0; i < assemblies.Length; i++)
+            if (managedTypePairs.ContainsKey(objectType))
+                return managedTypePairs.GetValueOrDefault(objectType)!;
+            if (managedTypes is null)
+                managedTypes = GetManagedTypes().ToArray();
+
+            for (int i = 0; i < managedTypes.Length; i++)
             {
-                var attribute = (SerializeTypeAttribute)assemblies[i].GetCustomAttribute(typeof(SerializeTypeAttribute))!;
-                if (attribute.SerializerType == objectType || attribute.SerializerType == objectType.BaseType) 
+                if (managedTypes[i].Attribute.SerializerType == objectType || managedTypes[i].Attribute.SerializerType == objectType.BaseType) 
                 {
-                    var newManagedType = (IManaged)(Activator.CreateInstance((assemblies[i])))!;
+                    var newManagedType = (IManaged)(Activator.CreateInstance((managedTypes[i].Type)))!;
+                    managedTypePairs.Add(objectType, newManagedType);
                     return newManagedType;
                 }
             }
             return null;
+        }
+
+        private static IEnumerable<ManagedTypesHolder> GetManagedTypes() 
+        {
+            var types = AppDomain.CurrentDomain.GetAssemblies().SelectMany(t => t.GetTypes().Where(a => a.GetCustomAttributes(typeof(SerializeTypeAttribute), true).Length > 0)).ToArray();
+            for (int i = 0; i < types.Length; i++)
+            {
+                var attribute = (SerializeTypeAttribute)types[i].GetCustomAttribute(typeof(SerializeTypeAttribute))!;
+                yield return new ManagedTypesHolder(types[i], attribute);
+            }
         }
 
         private static byte[] GetClassBytes(object @object) 

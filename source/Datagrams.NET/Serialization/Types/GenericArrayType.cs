@@ -1,19 +1,15 @@
-﻿using DatagramsNet.Serializer.Attributes;
+﻿using DatagramsNet.Serialization.Attributes;
 using System.Reflection;
 
-namespace DatagramsNet.Serializer.Types
+namespace DatagramsNet.Serialization.Types
 {
-    [SerializeType(typeof(Array))]
+    [TypeSerializer(typeof(Array))]
     internal sealed class GenericArrayType : ManagedType
     {
-        private static MethodInfo read = typeof(BinaryHelper).GetMethod(nameof(BinaryHelper.Read));
+        private static readonly MethodInfo read = typeof(BinaryHelper).GetMethod(nameof(BinaryHelper.Read))!;
 
         public override byte[] Serialize<TParent>(ObjectTableSize @object)
         {
-            //var baseSerialize = base.Serialize<TParent>(@object);
-            //if (baseSerialize is not null)
-            //return baseSerialize;
-
             var bytes = new List<byte>();
             bytes.Add((byte)@object.Size);
             var objectArray = (Array)@object.Value!;
@@ -27,8 +23,7 @@ namespace DatagramsNet.Serializer.Types
                 totalSize += currentBytes.Length;
                 bytes.AddRange(currentBytes);
             }
-            int difference = totalSize - bytes[0];
-            bytes[0] = (byte)(bytes[0] + (byte)difference);
+            bytes[0] = (byte)totalSize;
             return bytes.ToArray();
         }
 
@@ -46,10 +41,10 @@ namespace DatagramsNet.Serializer.Types
             return (T)(object)(elements);
         }
 
-        private IEnumerable<byte[]> GetArrayElements(byte[] bytes, Type elementType)
+        private static IEnumerable<byte[]> GetArrayElements(byte[] bytes, Type elementType)
         {
             int offset = 0;
-            while (bytes.Length > 1) 
+            while (bytes.Length > 1)
             {
                 var bytesCopy = bytes.Length;
                 int size = BinaryHelper.GetSizeOf(new NullValue(), ref bytes);

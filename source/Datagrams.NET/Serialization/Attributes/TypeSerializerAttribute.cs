@@ -1,11 +1,11 @@
-﻿namespace DatagramsNet.Serializer.Attributes
+﻿namespace DatagramsNet.Serialization.Attributes
 {
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
-    internal sealed class SerializeTypeAttribute : Attribute
+    internal sealed class TypeSerializerAttribute : Attribute
     {
         public Type SerializerType { get; }
 
-        public SerializeTypeAttribute(Type serializerType) 
+        public TypeSerializerAttribute(Type serializerType)
         {
             SerializerType = serializerType;
         }

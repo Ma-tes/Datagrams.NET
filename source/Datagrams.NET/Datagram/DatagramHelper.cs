@@ -5,7 +5,7 @@ namespace DatagramsNet.Datagram
 {
     public static class DatagramHelper
     {
-        private static MethodInfo read = typeof(BinaryHelper).GetMethod(nameof(BinaryHelper.Read))!;
+        private static readonly MethodInfo read = typeof(BinaryHelper).GetMethod(nameof(BinaryHelper.Read))!;
 
         private static ImmutableArray<Type> assemblyPackets = ImmutableArray<Type>.Empty;
 
@@ -47,7 +47,7 @@ namespace DatagramsNet.Datagram
 
         public static Type GetBaseDatagramType(int id, Type classAttributeType)
         {
-            if(assemblyPackets.Length == 0)
+            if (assemblyPackets.Length == 0)
                 assemblyPackets = ImmutableArray.Create<Type>(AppDomain.CurrentDomain.GetAssemblies().SelectMany(t => t.GetTypes().Where(a => a.GetCustomAttributes(classAttributeType, true).Length > 0)).ToArray());
             for (int i = 0; i < assemblyPackets.Length; i++)
             {

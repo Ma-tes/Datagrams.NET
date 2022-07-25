@@ -7,28 +7,25 @@ namespace DatagramsNet
     public class Client : UdpClient
     {
         public string Name { get; }
-        public IPAddress IpAddress { get; }
-        public int PortNumber { get; }
 
-        public IPEndPoint EndPoint => new IPEndPoint(IpAddress, PortNumber);
+        private IPEndPoint endPoint;
 
-        public Client(string name, IPAddress ipAddress, int portNumber) 
+        public Client(string name, IPAddress ipAddress, int portNumber)
         {
             Name = name;
-            PortNumber = portNumber;
-            IpAddress = ipAddress;
+            endPoint = new IPEndPoint(ipAddress, portNumber);
             if (Available == 0)
             {
-                Connect(IpAddress, portNumber);
+                Connect(endPoint.Address, portNumber);
                 Task.Run(() => CheckConnection());
             }
         }
 
-        protected virtual async Task CheckConnection(string message = "Client is connected") 
+        protected virtual async Task CheckConnection(string message = "Client is connected")
         {
-            var handShakePacket = new HandShakePacket(new ShakeMessage() {IdMessage = 17, Message = message});
+            var handShakePacket = new HandshakePacket(new ShakeMessage() { IdMessage = 17, Message = message });
             var writer = DatagramHelper.WriteDatagram(handShakePacket);
-            await DatagramHelper.SendDatagramAsync(new Func<byte[], Task>(async(byte[] bytes) => await SendAsync(bytes)), writer);
+            await DatagramHelper.SendDatagramAsync(new Func<byte[], Task>(async (byte[] bytes) => await SendAsync(bytes)), writer);
         }
     }
 }

@@ -1,13 +1,13 @@
-﻿using DatagramsNet.Serializer;
+﻿using DatagramsNet.Serialization;
+using DatagramsNet.Serialization.Interfaces;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
 namespace DatagramsNet
 {
-    internal struct ObjectTableSize
+    internal readonly struct ObjectTableSize
     {
         public object? Value { get; }
-
         public int Size { get; }
 
         public ObjectTableSize(object? value, int size)
@@ -20,28 +20,27 @@ namespace DatagramsNet
     public readonly struct MemberTableHolder
     {
         public byte[] Bytes { get; }
-
         public int Length { get; }
 
-        public MemberTableHolder(byte[] bytes, int length) 
+        public MemberTableHolder(byte[] bytes, int length)
         {
             Bytes = bytes;
             Length = length;
         }
     }
 
-    public static class BinaryHelper 
+    public static class BinaryHelper
     {
-        private static MethodInfo deserialization = typeof(ManagedTypeFactory).GetMethod(nameof(ManagedTypeFactory.Deserialize))!;
+        private static readonly MethodInfo deserialization = typeof(ManagedTypeFactory).GetMethod(nameof(ManagedTypeFactory.Deserialize))!;
 
         public static byte[] Write(object @object)
         {
-            byte[] byteHolder = new byte[0];
+            byte[] byteHolder = Array.Empty<byte>();
             int size = GetSizeOf(@object, ref byteHolder);
             var fixedBuffer = new byte[size];
-            var buffer = Serialization.SerializeObject(@object, size);
+            var buffer = Serializer.SerializeObject(@object, size);
 
-            if (buffer is null) 
+            if (buffer is null)
             {
                 IntPtr pointer = GetIntPtr(size);
                 Marshal.StructureToPtr(@object, pointer, false);
@@ -54,18 +53,19 @@ namespace DatagramsNet
 
         public static T Read<T>(byte[] bytes)
         {
-            var managedType = Serialization.TryGetManagedType(typeof(T));
-            if (managedType is not null) 
+            IManaged? managedType;
+            Serializer.TryGetManagedType(typeof(T), out managedType);
+            if (managedType is not null)
             {
-                var currentObject = (T)(deserialization.MakeGenericMethod(typeof(T)).Invoke(null, new object[] { managedType, bytes}))!;
+                var currentObject = (T)(deserialization.MakeGenericMethod(typeof(T)).Invoke(null, new object[] { managedType, bytes }))!;
                 return currentObject;
             }
 
             var @object = Activator.CreateInstance<T>();
             var members = GetMembersInformation(@object!).ToArray();
-            if (members is not null) 
+            if (members is not null)
             {
-                var @currentObject = (T)Serialization.DeserializeBytes(@object!.GetType(), bytes);
+                var @currentObject = (T)Serializer.DeserializeBytes(@object!.GetType(), bytes);
                 return @currentObject;
             }
 
@@ -74,7 +74,7 @@ namespace DatagramsNet
             return (T)Marshal.PtrToStructure(objectPointer, typeof(T))!;
         }
 
-        public static ReadOnlySpan<MemberInformation> GetMembersInformation(object @object) 
+        public static ReadOnlySpan<MemberInformation> GetMembersInformation(object @object)
         {
             var members = GetMembers(@object.GetType());
             if (members is null)
@@ -94,7 +94,7 @@ namespace DatagramsNet
             return (ReadOnlySpan<MemberInformation>)membersInformations;
         }
 
-        private static List<MemberInfo> GetMembers(Type objectType) 
+        private static List<MemberInfo> GetMembers(Type objectType)
         {
             if (!(objectType.IsClass))
                 return null!;
@@ -113,7 +113,7 @@ namespace DatagramsNet
                 var sizeTable = GetSizeOfClass(membersInformation, bytes);
                 size = sizeTable;
             }
-            else 
+            else
             {
                 var holder = GetTableHolderInformation(new MemberInformation(@object, @object!.GetType()), bytes, 0);
                 size = holder.Length;
@@ -126,20 +126,19 @@ namespace DatagramsNet
         private static MemberTableHolder GetTableHolderInformation(MemberInformation member, byte[] bytes, int start)
         {
             object memberObject = member.MemberValue!;
-            var managedType = Serialization.TryGetManagedType(member.MemberType);
-
             int size;
-            if ((memberObject is NullValue || managedType is not null) && bytes.Length > 1)
+
+            if ((memberObject is NullValue || Serializer.TryGetManagedType(member.MemberType, out IManaged? _)) && bytes.Length > 1)
             {
                 size = bytes[start];
-                bytes = RemoveSizeIndex(bytes, start);
+                bytes = bytes.RemoveAt(start);
 
                 return new MemberTableHolder(bytes, size);
             }
 
-            if (memberObject is string)
+            if (memberObject is string text)
             {
-                size = (((string)(memberObject)).Length * sizeof(byte));
+                size = text.Length * sizeof(byte);
                 return new MemberTableHolder(bytes, size);
             }
 
@@ -171,24 +170,24 @@ namespace DatagramsNet
             return originalSize;
         }
 
-        private static int GetSizeOfArray(Array array, ref byte[] bytes) 
+        private static int GetSizeOfArray(Array array, ref byte[] bytes)
         {
             int totalSize = 0;
             for (int i = 0; i < array.Length; i++)
             {
-                int currentSize = BinaryHelper.GetSizeOf(array.GetValue(i), ref bytes);
+                int currentSize = GetSizeOf(array.GetValue(i), ref bytes);
                 totalSize += currentSize;
             }
             return totalSize;
         }
 
-        private static byte[] RemoveSizeIndex(byte[] bytes, int index) 
+        private static byte[] RemoveAt(this byte[] bytes, int index)
         {
             var result = new byte[bytes.Length - 1];
             Span<byte> spanResult = result.AsSpan();
             Span<byte> byteSpan = bytes;
 
-            if (index != 0) 
+            if (index != 0)
             {
                 Span<byte> firstSpan = byteSpan.Slice(0, (index));
                 firstSpan.CopyTo(spanResult);

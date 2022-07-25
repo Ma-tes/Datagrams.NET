@@ -13,11 +13,8 @@ namespace DatagramsNet
     public abstract partial class ServerManager : IServer
     {
         public string Name { get; }
-
         public IPAddress IPAddress { get; }
-
         public Socket ServerSocket { get; }
-
         public List<Client> Clients { get; } = new();
     }
 

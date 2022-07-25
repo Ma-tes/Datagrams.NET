@@ -1,5 +1,4 @@
-﻿
-namespace DatagramsNet.Serializer.Interfaces
+﻿namespace DatagramsNet.Serialization.Interfaces
 {
     internal interface IManaged
     {

@@ -1,9 +1,8 @@
-﻿using DatagramsNet.Serializer.Interfaces;
+﻿using DatagramsNet.Serialization.Interfaces;
 
-namespace DatagramsNet.Serializer
+namespace DatagramsNet.Serialization
 {
-
-    internal static class ManagedTypeFactory 
+    internal static class ManagedTypeFactory
     {
         public static byte[] Serialize<TParent>(IManaged managedType, ObjectTableSize @object) => managedType.Serialize<TParent>(@object);
 
@@ -12,11 +11,11 @@ namespace DatagramsNet.Serializer
 
     internal abstract class ManagedType : IManaged
     {
-        private static Dictionary<ManagedObjectKey, List<SerializeTable>> cacheType = new();
+        private static readonly Dictionary<ManagedObjectKey, List<SerializeTable>> cacheType = new();
 
         protected static List<SerializeTable>? CurrentTable { get; set; }
 
-        public virtual byte[] Serialize<TParent>(ObjectTableSize @object) 
+        public virtual byte[] Serialize<TParent>(ObjectTableSize @object)
         {
             var objectKey = new ManagedObjectKey(typeof(TParent), nameof(@object.Value));
             if (cacheType.ContainsKey(objectKey))

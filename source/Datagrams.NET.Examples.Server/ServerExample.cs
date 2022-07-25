@@ -6,16 +6,16 @@ namespace DatagramsNet.Examples.Server
 {
     internal sealed class ServerExample : ServerManager
     {
-        private static ServerExample serverHolder;
-
         public override int PortNumber => base.PortNumber;
         public int handShakeCounter = 0;
 
-        public ServerExample(string name, IPAddress ipAddress) : base(name, ipAddress) { serverHolder = this; }
+        public ServerExample(string name, IPAddress ipAddress) : base(name, ipAddress) 
+        {
+        }
 
         public override async Task OnRecieveAsync(object datagram, EndPoint ipAddress) 
         {
-            if (datagram is HandShakePacket newDatagram)
+            if (datagram is HandshakePacket newDatagram)
             {
                 handShakeCounter++;
                 await ServerLogger.LogAsync<NormalPrefix>($"Id: {handShakeCounter} packet: {newDatagram.GetType()} testMessage: {newDatagram.ShortMessage}", TimeFormat.Half);

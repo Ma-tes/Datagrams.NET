@@ -25,17 +25,5 @@
             }
             return datagramBytes.ToArray();
         }
-
-        public static IEnumerable<byte[]> DeserializeDatagram(byte[] subData, int[] subBytesLength)
-        {
-            Memory<byte> bytes = subData;
-            int lastIndex = 0;
-            for (int i = 0; i < subBytesLength.Length; i++)
-            {
-                var dataSnippet = bytes.Slice(lastIndex, subBytesLength[i]);
-                lastIndex += subBytesLength[i];
-                yield return dataSnippet.ToArray();
-            }
-        }
     }
 }

@@ -17,7 +17,6 @@ namespace DatagramsNet.Serializer.Types
             byte[] bytes = Encoding.ASCII.GetBytes(((string)@object.Value));
             bytesHolder.Add((byte)bytes.Length);
             bytesHolder.AddRange(bytes);
-            //CurrentTable.Add(new SerializeTable(@object.Value, bytes));
             return bytesHolder.ToArray();
         }
 

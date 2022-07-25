@@ -5,13 +5,13 @@ using System.Reflection;
 
 namespace DatagramsNet.Serializer
 {
-    internal readonly struct ManagedTypesHolder
+    internal readonly struct ManagedTypeHolder
     {
         public Type Type { get; }
 
         public SerializeTypeAttribute Attribute { get; }
 
-        public ManagedTypesHolder(Type type, SerializeTypeAttribute attribute) 
+        public ManagedTypeHolder(Type type, SerializeTypeAttribute attribute) 
         {
             Type = type;
             Attribute = attribute;
@@ -22,9 +22,7 @@ namespace DatagramsNet.Serializer
     {
         private static MethodInfo serialization = typeof(ManagedTypeFactory).GetMethod(nameof(ManagedTypeFactory.Serialize))!;
 
-        private static ManagedTypesHolder[] managedTypes;
-
-        private static Dictionary<Type, IManaged> managedTypePairs = new();
+        private static ManagedTypeHolder[]? managedTypes;
 
         public static byte[] SerializeObject(object @object, int size)
         {
@@ -32,7 +30,7 @@ namespace DatagramsNet.Serializer
             if (managedType is not null) 
             {
                 var table = new ObjectTableSize(@object, size);
-                var bytes = (byte[])serialization.MakeGenericMethod(@object.GetType().BaseType).Invoke(null, new object[] { managedType, table })!;
+                var bytes = (byte[])serialization.MakeGenericMethod(@object.GetType().BaseType!).Invoke(null, new object[] { managedType, table })!;
                 return bytes;
             }
 
@@ -43,7 +41,7 @@ namespace DatagramsNet.Serializer
                     throw new ArgumentNullException(nameof(@object));
                 return classBytes.ToArray();
             }
-            return null;
+            return null!;
         }
 
         public static object DeserializeBytes(Type datagramType, byte[] datagramData) 
@@ -63,7 +61,7 @@ namespace DatagramsNet.Serializer
             Span<byte> spanBytes = datagramData;
             var datagramInstance = Activator.CreateInstance(datagramType);
 
-            var membersInformation = BinaryHelper.GetMembersInformation(datagramInstance).ToArray();
+            var membersInformation = BinaryHelper.GetMembersInformation(datagramInstance!).ToArray();
             var datagramTables = new SubDatagramTable[membersInformation.Length];
 
             int lastSize = 0;
@@ -84,8 +82,6 @@ namespace DatagramsNet.Serializer
 
         public static IManaged TryGetManagedType(Type objectType) 
         {
-            //if (managedTypePairs.ContainsKey(objectType))
-                //return managedTypePairs.GetValueOrDefault(objectType)!;
             if (managedTypes is null)
                 managedTypes = GetManagedTypes().ToArray();
 
@@ -94,21 +90,19 @@ namespace DatagramsNet.Serializer
                 if (managedTypes[i].Attribute.SerializerType == objectType || managedTypes[i].Attribute.SerializerType == objectType.BaseType) 
                 {
                     var newManagedType = (IManaged)(Activator.CreateInstance((managedTypes[i].Type)))!;
-                    //if (!(managedTypePairs.ContainsKey(objectType)))
-                        //managedTypePairs.Add(objectType, newManagedType);
                     return newManagedType;
                 }
             }
-            return null;
+            return null!;
         }
 
-        private static IEnumerable<ManagedTypesHolder> GetManagedTypes() 
+        private static IEnumerable<ManagedTypeHolder> GetManagedTypes() 
         {
             var types = AppDomain.CurrentDomain.GetAssemblies().SelectMany(t => t.GetTypes().Where(a => a.GetCustomAttributes(typeof(SerializeTypeAttribute), true).Length > 0)).ToArray();
             for (int i = 0; i < types.Length; i++)
             {
                 var attribute = (SerializeTypeAttribute)types[i].GetCustomAttribute(typeof(SerializeTypeAttribute))!;
-                yield return new ManagedTypesHolder(types[i], attribute);
+                yield return new ManagedTypeHolder(types[i], attribute);
             }
         }
 
@@ -118,7 +112,7 @@ namespace DatagramsNet.Serializer
             var bytes = new List<byte>();
             for (int i = 0; i < members.Length; i++)
             {
-                bytes.AddRange(BinaryHelper.Write(members[i].MemberValue));
+                bytes.AddRange(BinaryHelper.Write(members[i].MemberValue!));
             }
             return bytes.ToArray();
         }

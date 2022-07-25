@@ -1,10 +1,13 @@
-﻿using System.Reflection;
+﻿using System.Collections.Immutable;
+using System.Reflection;
 
 namespace DatagramsNet.Datagram
 {
     public static class DatagramHelper
     {
         private static MethodInfo read = typeof(BinaryHelper).GetMethod(nameof(BinaryHelper.Read))!;
+
+        private static ImmutableArray<Type> assemblyPackets = ImmutableArray<Type>.Empty;
 
         public static async Task SendDatagramAsync(Func<byte[], Task> sendAction, ReadOnlyMemory<byte[]> data)
         {
@@ -15,7 +18,7 @@ namespace DatagramsNet.Datagram
         public static Memory<byte[]> WriteDatagram<T>(T datagram)
         {
             var datagramList = new List<byte[]>();
-            var customProperties = datagram.GetType().GetProperties();
+            var customProperties = datagram!.GetType().GetProperties();
             for (int i = 0; i < customProperties.Length; i++)
             {
                 var value = customProperties[i].GetValue(datagram);
@@ -32,7 +35,7 @@ namespace DatagramsNet.Datagram
         public static object SetObjectData(Type datagramType, Memory<byte[]> data)
         {
             var datagram = Activator.CreateInstance(datagramType);
-            PropertyInfo[] fields = datagram.GetType().GetProperties();
+            PropertyInfo[] fields = datagram!.GetType().GetProperties();
             for (int i = 1; i < data.Length; i++)
             {
                 Type fieldType = fields[i].PropertyType;
@@ -44,15 +47,16 @@ namespace DatagramsNet.Datagram
 
         public static Type GetBaseDatagramType(int id, Type classAttributeType)
         {
-            var assemblies = AppDomain.CurrentDomain.GetAssemblies().SelectMany(t => t.GetTypes().Where(a => a.GetCustomAttributes(classAttributeType, true).Length > 0)).ToArray();
-            for (int i = 0; i < assemblies.Length; i++)
+            if(assemblyPackets.Length == 0)
+                assemblyPackets = ImmutableArray.Create<Type>(AppDomain.CurrentDomain.GetAssemblies().SelectMany(t => t.GetTypes().Where(a => a.GetCustomAttributes(classAttributeType, true).Length > 0)).ToArray());
+            for (int i = 0; i < assemblyPackets.Length; i++)
             {
-                PropertyInfo[] properties = assemblies[i].GetProperties();
-                object fieldValue = properties[0].GetValue(Activator.CreateInstance(assemblies[i]));
+                PropertyInfo[] properties = assemblyPackets[i].GetProperties();
+                object fieldValue = properties[0].GetValue(Activator.CreateInstance(assemblyPackets[i]))!;
                 if (fieldValue.Equals(id))
-                    return assemblies[i];
+                    return assemblyPackets[i];
             }
-            return null;
+            return null!;
         }
     }
 }

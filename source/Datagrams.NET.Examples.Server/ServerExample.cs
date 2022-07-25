@@ -6,10 +6,9 @@ namespace DatagramsNet.Examples.Server
 {
     internal sealed class ServerExample : ServerManager
     {
-        public override int PortNumber => base.PortNumber;
-
         private static ServerExample serverHolder;
 
+        public override int PortNumber => base.PortNumber;
         public int handShakeCounter = 0;
 
         public ServerExample(string name, IPAddress ipAddress) : base(name, ipAddress) { serverHolder = this; }

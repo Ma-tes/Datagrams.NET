@@ -1,7 +1,6 @@
 ﻿using DatagramsNet.Serializer;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace DatagramsNet
 {
@@ -33,7 +32,7 @@ namespace DatagramsNet
 
     public static class BinaryHelper 
     {
-        private static MethodInfo deserialization = typeof(ManagedTypeFactory).GetMethod(nameof(ManagedTypeFactory.Deserialize));
+        private static MethodInfo deserialization = typeof(ManagedTypeFactory).GetMethod(nameof(ManagedTypeFactory.Deserialize))!;
 
         public static byte[] Write(object @object)
         {
@@ -55,9 +54,6 @@ namespace DatagramsNet
 
         public static T Read<T>(byte[] bytes)
         {
-            IntPtr objectPointer = GetIntPtr(bytes.Length);
-            Marshal.Copy(bytes, 0, objectPointer, bytes.Length);
-
             var managedType = Serialization.TryGetManagedType(typeof(T));
             if (managedType is not null) 
             {
@@ -66,13 +62,16 @@ namespace DatagramsNet
             }
 
             var @object = Activator.CreateInstance<T>();
-            var members = GetMembersInformation(@object).ToArray();
+            var members = GetMembersInformation(@object!).ToArray();
             if (members is not null) 
             {
-                var @currentObject = (T)Serialization.DeserializeBytes(@object.GetType(), bytes);
+                var @currentObject = (T)Serialization.DeserializeBytes(@object!.GetType(), bytes);
                 return @currentObject;
             }
-            return (T)Marshal.PtrToStructure(objectPointer, typeof(T));
+
+            IntPtr objectPointer = GetIntPtr(bytes.Length);
+            Marshal.Copy(bytes, 0, objectPointer, bytes.Length);
+            return (T)Marshal.PtrToStructure(objectPointer, typeof(T))!;
         }
 
         public static ReadOnlySpan<MemberInformation> GetMembersInformation(object @object) 
@@ -98,14 +97,13 @@ namespace DatagramsNet
         private static List<MemberInfo> GetMembers(Type objectType) 
         {
             if (!(objectType.IsClass))
-                return null;
+                return null!;
             var members = new List<MemberInfo>();
             members.AddRange(objectType.GetFields());
             members.AddRange(objectType.GetProperties());
             return members;
         }
 
-        //TODO: Create any type of caching
         public static int GetSizeOf<T>(T @object, ref byte[] bytes)
         {
             int size;
@@ -117,7 +115,7 @@ namespace DatagramsNet
             }
             else 
             {
-                var holder = GetTableHolderInformation(new MemberInformation(@object, @object.GetType()), bytes, 0);
+                var holder = GetTableHolderInformation(new MemberInformation(@object, @object!.GetType()), bytes, 0);
                 size = holder.Length;
                 bytes = holder.Bytes;
             }
@@ -127,7 +125,7 @@ namespace DatagramsNet
 
         private static MemberTableHolder GetTableHolderInformation(MemberInformation member, byte[] bytes, int start)
         {
-            object memberObject = member.MemberValue;
+            object memberObject = member.MemberValue!;
             var managedType = Serialization.TryGetManagedType(member.MemberType);
 
             int size;
@@ -151,9 +149,11 @@ namespace DatagramsNet
                 size = GetSizeOfArray(memberArray, ref bytes);
                 return new MemberTableHolder(bytes, size);
             }
+
             size = Marshal.SizeOf(memberObject!);
             return new MemberTableHolder(bytes, size);
         }
+
         private static int GetSizeOfClass(MemberInformation[] members, byte[] bytes)
         {
             byte[] bytesCopy = bytes;
@@ -198,8 +198,6 @@ namespace DatagramsNet
             return result;
         }
 
-        private static Type GetTypeOfArrayElement(Array objects) => objects.GetType().GetGenericArguments()[0];
-
-        private static IntPtr GetIntPtr(int size) => Marshal.AllocHGlobal(size); //**(IntPtr**)(&reference);
+        private static IntPtr GetIntPtr(int size) => Marshal.AllocHGlobal(size);
     }
 }

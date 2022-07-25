@@ -4,13 +4,6 @@ using DatagramsNet.Interfaces;
 
 namespace DatagramsNet
 {
-    public struct ConnectionKey<T> 
-    {
-        public T Key { get; set; }
-
-        public string Message { get; set; }
-    }
-
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public class ShakeMessage 
     {
@@ -18,7 +11,6 @@ namespace DatagramsNet
 
         public string Message { get; set; } = default;
 
-        //public ConnectionKey<TimeSpan>[] Keys = new ConnectionKey<TimeSpan>[] { new ConnectionKey<TimeSpan>() { Key = TimeSpan.Zero, Message = "TestMessage"} };
         public string[] Keys { get; set; } = new string[] { "Test", "Serialization", "AnotherTest"};
     }
 
@@ -34,6 +26,9 @@ namespace DatagramsNet
 
         [Field(2)]
         public ShakeMessage Message { get; set; } = new();
+
+        [Field(3)]
+        public int[] Values { get; set; } = new int[] { 1, 7 };
 
         public HandShakePacket() { }
 

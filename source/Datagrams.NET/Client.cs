@@ -6,11 +6,9 @@ namespace DatagramsNet
 {
     public class Client : UdpClient
     {
-        public string Name { get; set; }
-
-        public IPAddress IpAddress { get; set; }
-
-        public int PortNumber { get; set; }
+        public string Name { get; }
+        public IPAddress IpAddress { get; }
+        public int PortNumber { get; }
 
         public IPEndPoint EndPoint => new IPEndPoint(IpAddress, PortNumber);
 
@@ -29,7 +27,6 @@ namespace DatagramsNet
         protected virtual async Task CheckConnection(string message = "Client is connected") 
         {
             var handShakePacket = new HandShakePacket(new ShakeMessage() {IdMessage = 17, Message = message});
-            //var handShakePacket = new HandShakePacket();
             var writer = DatagramHelper.WriteDatagram(handShakePacket);
             await DatagramHelper.SendDatagramAsync(new Func<byte[], Task>(async(byte[] bytes) => await SendAsync(bytes)), writer);
         }

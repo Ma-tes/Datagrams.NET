@@ -1,5 +1,6 @@
 ﻿using DatagramsNet.Serialization.Attributes;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace DatagramsNet.Serialization.Types
 {
@@ -8,22 +9,30 @@ namespace DatagramsNet.Serialization.Types
     {
         private static readonly MethodInfo read = typeof(BinaryHelper).GetMethod(nameof(BinaryHelper.Read))!;
 
+        private readonly int intSize = sizeof(int);
+
         public override byte[] Serialize<TParent>(ObjectTableSize @object)
         {
-            var bytes = new List<byte>();
-            bytes.Add((byte)@object.Size);
             var objectArray = (Array)@object.Value!;
+            int byteLength = @object.Size;
+
+
+            int memorySize = (intSize + byteLength) + (objectArray.Length * sizeof(int));
+            var bytes = new byte[memorySize];
+            int currentSize = bytes.Length;
+
+            Span<byte> spanBytes = bytes;
+            MemoryMarshal.Write(spanBytes, ref currentSize);
 
             int totalSize = 0;
             for (int i = 0; i < objectArray.Length; i++)
             {
                 object currentValue = objectArray.GetValue(i)!;
-                byte[] currentBytes = BinaryHelper.Write(currentValue);
+                Span<byte> span = BinaryHelper.Write(currentValue).AsSpan<byte>();
 
-                totalSize += currentBytes.Length;
-                bytes.AddRange(currentBytes);
+                span.CopyTo(spanBytes[(intSize + totalSize)..]);
+                totalSize += span.Length;
             }
-            bytes[0] = (byte)totalSize;
             return bytes.ToArray();
         }
 

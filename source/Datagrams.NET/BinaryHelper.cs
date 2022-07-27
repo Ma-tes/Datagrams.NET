@@ -1,5 +1,6 @@
 ﻿using DatagramsNet.Serialization;
 using DatagramsNet.Serialization.Interfaces;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
@@ -33,15 +34,18 @@ namespace DatagramsNet
     {
         private static readonly MethodInfo deserialization = typeof(ManagedTypeFactory).GetMethod(nameof(ManagedTypeFactory.Deserialize))!;
 
+        private static readonly int[] defaultIntIndexes = { 0, 1, 2, 3 };
+
         public static byte[] Write(object @object)
         {
             byte[] byteHolder = Array.Empty<byte>();
             int size = GetSizeOf(@object, ref byteHolder);
-            var fixedBuffer = new byte[size];
             var buffer = Serializer.SerializeObject(@object, size);
 
             if (buffer is null)
             {
+                var fixedBuffer = new byte[size];
+
                 IntPtr pointer = GetIntPtr(size);
                 Marshal.StructureToPtr(@object, pointer, false);
                 Marshal.Copy(pointer, fixedBuffer, 0, fixedBuffer.Length);
@@ -126,12 +130,15 @@ namespace DatagramsNet
         private static MemberTableHolder GetTableHolderInformation(MemberInformation member, byte[] bytes, int start)
         {
             object memberObject = member.MemberValue!;
+            Memory<byte> memoryBytes = bytes;
             int size;
 
             if ((memberObject is NullValue || Serializer.TryGetManagedType(member.MemberType, out IManaged? _)) && bytes.Length > 1)
             {
-                size = bytes[start];
-                bytes = bytes.RemoveAt(start);
+                ReadOnlySpan<byte> span = bytes;
+
+                size = MemoryMarshal.Read<int>(span[0..sizeof(int)]);
+                bytes = memoryBytes.RemoveAtIndexes(defaultIntIndexes, start);
 
                 return new MemberTableHolder(bytes, size);
             }
@@ -170,7 +177,7 @@ namespace DatagramsNet
             return originalSize;
         }
 
-        private static int GetSizeOfArray(Array array, ref byte[] bytes)
+        public static int GetSizeOfArray(Array array, ref byte[] bytes)
         {
             int totalSize = 0;
             for (int i = 0; i < array.Length; i++)
@@ -181,20 +188,35 @@ namespace DatagramsNet
             return totalSize;
         }
 
-        private static byte[] RemoveAt(this byte[] bytes, int index)
+        public static byte[] RemoveAtIndexes(this Memory<byte> bytes, int[] indexes, int shift) 
         {
+            Memory<byte> holder = bytes;
+            for (int i = 0; i < indexes.Length; i++)
+            {
+                int currentIndex = shift + indexes[i];
+                if (TryRemoveAt(ref holder, currentIndex))
+                    bytes = holder;
+            }
+            return bytes.ToArray();
+        }
+
+        private static bool TryRemoveAt(ref Memory<byte> bytes, int index)
+        {
+            if (index < 0 && index > bytes.Length)
+                return false;
             var result = new byte[bytes.Length - 1];
             Span<byte> spanResult = result.AsSpan();
-            Span<byte> byteSpan = bytes;
 
             if (index != 0)
             {
-                Span<byte> firstSpan = byteSpan.Slice(0, (index));
+                Span<byte> firstSpan = bytes.Span.Slice(0, (index));
                 firstSpan.CopyTo(spanResult);
             }
-            Span<byte> secondSpan = byteSpan.Slice((index + 1), (bytes.Length - (index + 1)));
+            Span<byte> secondSpan = bytes.Span.Slice((index + 1), (bytes.Length - (index + 1)));
             secondSpan.CopyTo(spanResult);
-            return result;
+            bytes = spanResult.ToArray();
+
+            return spanResult.Length < bytes.Length;
         }
 
         private static IntPtr GetIntPtr(int size) => Marshal.AllocHGlobal(size);

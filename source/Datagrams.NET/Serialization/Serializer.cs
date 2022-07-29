@@ -104,7 +104,6 @@ namespace DatagramsNet.Serialization
                 .Select(t => new ManagedTypeHolder(t, t.GetCustomAttribute<TypeSerializerAttribute>()!));
         }
 
-
         private static byte[] GetClassBytes(object @object)
         {
             var members = BinaryHelper.GetMembersInformation(@object);

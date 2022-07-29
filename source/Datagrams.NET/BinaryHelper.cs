@@ -164,17 +164,18 @@ namespace DatagramsNet
         {
             byte[] bytesCopy = bytes;
             int totalSize = 0;
-            int originalSize = 0;
+            int offset = 0;
 
             foreach (var member in members)
             {
-                var currentBytesCopy = bytes;
-                var tableHolder = GetTableHolderInformation(member, bytes, totalSize);
+                var tableHolder = GetTableHolderInformation(member, bytesCopy, totalSize);
+                int difference = bytesCopy.Length - tableHolder.Bytes.Length;
 
+                bytesCopy = tableHolder.Bytes;
                 totalSize += tableHolder.Length;
-                originalSize += (tableHolder.Length + (bytesCopy.Length - tableHolder.Bytes.Length));
+                offset += difference;
             }
-            return originalSize;
+            return totalSize + offset;
         }
 
         public static int GetSizeOfArray(Array array, ref byte[] bytes)

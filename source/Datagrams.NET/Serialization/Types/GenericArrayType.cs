@@ -17,12 +17,11 @@ namespace DatagramsNet.Serialization.Types
             int byteLength = @object.Size;
 
 
-            int memorySize = (intSize + byteLength) + (objectArray.Length * sizeof(int));
-            var bytes = new byte[memorySize];
-            int currentSize = bytes.Length;
+            int memorySize = (byteLength) + (objectArray.Length * sizeof(int));
+            var bytes = new byte[memorySize + intSize];
 
             Span<byte> spanBytes = bytes;
-            MemoryMarshal.Write(spanBytes, ref currentSize);
+            MemoryMarshal.Write(spanBytes, ref memorySize);
 
             int totalSize = 0;
             for (int i = 0; i < objectArray.Length; i++)

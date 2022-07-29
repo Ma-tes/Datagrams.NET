@@ -11,7 +11,7 @@ namespace DatagramsNet
 
         public string Message { get; set; } = default;
 
-        //public string[] Keys { get; set; } = new string[] { "Test", "Serialization", "AnotherTest"};
+        public string[] Keys { get; set; } = new string[] { "One", "Two", "Three"};
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]

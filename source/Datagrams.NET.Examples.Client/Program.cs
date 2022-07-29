@@ -12,13 +12,13 @@ IPAddress ip = string.IsNullOrWhiteSpace(ipAddress) ? IPAddress.Loopback : IPAdd
 var client = new Client("TestClient", ip, Port);
 Parallel.For(0, DatagramCount, async i =>
 {
-    string message = "ShortMessageTest";
+    string message = $"ShortMessageTest[{i}]";
     string[] keys = new string[(i / 10) + 1];
     for (int j = 0; j < keys.Length; j++)
     {
         keys[j] = $"Key({j})";
     }
-    var datagram = new HandshakePacket(new ShakeMessage() { IdMessage = i, Message = $"{message}", Keys = keys});
+    var datagram = new HandshakePacket(new ShakeMessage() { IdMessage = i, Message = $"{message}"});
     await DatagramHelper.SendDatagramAsync(async data => await client.SendAsync(data), data: DatagramHelper.WriteDatagram(datagram));
 });
 Console.ReadKey(intercept: true);

@@ -34,8 +34,6 @@ namespace DatagramsNet
     {
         private static readonly MethodInfo deserialization = typeof(ManagedTypeFactory).GetMethod(nameof(ManagedTypeFactory.Deserialize))!;
 
-        private static readonly int[] defaultIntIndexes = { 0, 1, 2, 3 };
-
         public static byte[] Write(object @object)
         {
             byte[] byteHolder = Array.Empty<byte>();
@@ -137,8 +135,10 @@ namespace DatagramsNet
             {
                 ReadOnlySpan<byte> span = bytes;
 
-                size = MemoryMarshal.Read<int>(span[0..sizeof(int)]);
-                bytes = memoryBytes.RemoveAtIndexes(defaultIntIndexes, start);
+                int byteLength = (sizeof(int) + start);
+                var newSpan = span[start..(sizeof(int) + byteLength)];
+                size = MemoryMarshal.Read<int>(newSpan);
+                bytes = memoryBytes.RemoveAtIndexes(sizeof(int), start);
 
                 return new MemberTableHolder(bytes, size);
             }
@@ -188,35 +188,49 @@ namespace DatagramsNet
             return totalSize;
         }
 
-        public static byte[] RemoveAtIndexes(this Memory<byte> bytes, int[] indexes, int shift) 
+        public static byte[] RemoveAtIndexes(this Memory<byte> bytes, int length, int shift) 
         {
             Memory<byte> holder = bytes;
-            for (int i = 0; i < indexes.Length; i++)
+            for (int i = 0; i < length; i++)
             {
-                int currentIndex = shift + indexes[i];
-                if (TryRemoveAt(ref holder, currentIndex))
-                    bytes = holder;
+                TryRemoveAt(ref holder, shift);
             }
-            return bytes.ToArray();
+            return holder.ToArray();
         }
 
         private static bool TryRemoveAt(ref Memory<byte> bytes, int index)
         {
-            if (index < 0 && index > bytes.Length)
-                return false;
-            var result = new byte[bytes.Length - 1];
-            Span<byte> spanResult = result.AsSpan();
+            Memory<byte> spanResult = new byte[bytes.Length - 1];
 
-            if (index != 0)
+            if (index != 0) 
             {
-                Span<byte> firstSpan = bytes.Span.Slice(0, (index));
-                firstSpan.CopyTo(spanResult);
+                var spanSlice = bytes.Span[0..index];
+                spanSlice.CopyTo(spanResult.Span);
             }
-            Span<byte> secondSpan = bytes.Span.Slice((index + 1), (bytes.Length - (index + 1)));
-            secondSpan.CopyTo(spanResult);
-            bytes = spanResult.ToArray();
 
-            return spanResult.Length < bytes.Length;
+            int currentIndex = (index + 1);
+            Memory<byte> newSpanSlice = bytes.Span[currentIndex..].ToArray();
+            bool bytesCheck = ReplaceBytes(ref spanResult, newSpanSlice);
+
+            if(bytesCheck)
+                bytes = spanResult;
+            return bytesCheck;
+        }
+
+        private static bool ReplaceBytes([NotNull] ref Memory<byte> source, Memory<byte> newData) 
+        {
+            if (source.Span.Length < newData.Span.Length)
+                return false;
+
+            Span<byte> span = source.Span;
+            int lengthDifference = (source.Length - newData.Length);
+            for (int i = 0; i < newData.Length; i++)
+            {
+                int index = i + (lengthDifference);
+                span[index] = newData.Span[i];
+            }
+            source = span.ToArray();
+            return true;
         }
 
         private static IntPtr GetIntPtr(int size) => Marshal.AllocHGlobal(size);

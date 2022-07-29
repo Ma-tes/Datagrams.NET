@@ -18,11 +18,11 @@ namespace DatagramsNet.Examples.Server
             if (datagram is HandshakePacket newDatagram)
             {
                 handShakeCounter++;
-                await ServerLogger.LogAsync<NormalPrefix>($"Id: {handShakeCounter} packet: {newDatagram.GetType()} testMessage: {newDatagram.ShortMessage}", TimeFormat.Half);
-                for (int i = 0; i < newDatagram.Message.Keys.Length; i++)
-                {
-                    await ServerLogger.LogAsync<NormalPrefix>($"Key:[{i}] -> {newDatagram.Message.Keys[i]}", TimeFormat.Half);
-                }
+                await ServerLogger.LogAsync<NormalPrefix>($"Id: {handShakeCounter} packet: {newDatagram.GetType()} testMessage: {newDatagram.ShortMessage} shakeMessage: [{newDatagram.Message.IdMessage}] -> {newDatagram.Message.Message}", TimeFormat.Half);
+                //for (int i = 0; i < newDatagram.Message.Keys.Length; i++)
+                //{
+                    //await ServerLogger.LogAsync<NormalPrefix>($"Key:[{i}] -> {newDatagram.Message.Keys[i]}", TimeFormat.Half);
+                //}
                 //await ServerLogger.Log<NormalPrefix>($"Id: {handShakeCounter} packet: {newDatagram.GetType()} message: {newDatagram.ShortMessage}", TimeFormat.HALF);
             }
         }

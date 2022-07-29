@@ -11,7 +11,7 @@ namespace DatagramsNet
 
         public string Message { get; set; } = default;
 
-        public string[] Keys { get; set; } = new string[] { "Test", "Serialization", "AnotherTest"};
+        //public string[] Keys { get; set; } = new string[] { "Test", "Serialization", "AnotherTest"};
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -27,8 +27,8 @@ namespace DatagramsNet
         [Field(2)]
         public ShakeMessage Message { get; set; } = new();
 
-        [Field(3)]
-        public int[] Values { get; set; } = new int[] { 1, 7 };
+        //[Field(3)]
+        //public int[] Values { get; set; } = new int[] { 1, 7 };
 
         public HandshakePacket() { }
 

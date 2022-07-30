@@ -37,7 +37,7 @@ namespace DatagramsNet
         public static byte[] Write(object @object)
         {
             byte[] byteHolder = Array.Empty<byte>();
-            int size = GetSizeOf(@object, ref byteHolder);
+            int size = GetSizeOf(@object, @object.GetType(), ref byteHolder);
             var buffer = Serializer.SerializeObject(@object, size);
 
             if (buffer is null)
@@ -55,20 +55,21 @@ namespace DatagramsNet
 
         public static T Read<T>(byte[] bytes)
         {
-            IManaged? managedType;
-            Serializer.TryGetManagedType(typeof(T), out managedType);
-            if (managedType is not null)
+            if (Serializer.TryGetManagedType(typeof(T), out IManaged? managedType))
             {
                 var currentObject = (T)(deserialization.MakeGenericMethod(typeof(T)).Invoke(null, new object[] { managedType, bytes }))!;
                 return currentObject;
             }
 
-            var @object = Activator.CreateInstance<T>();
-            var members = GetMembersInformation(@object!).ToArray();
-            if (members is not null)
+            if (typeof(T).IsClass) 
             {
-                var @currentObject = (T)Serializer.DeserializeBytes(@object!.GetType(), bytes);
-                return @currentObject;
+                var @object = Activator.CreateInstance<T>();
+                var members = GetMembersInformation(@object!).ToArray();
+                if (members is not null)
+                {
+                    var @currentObject = (T)Serializer.DeserializeBytes(@object!.GetType(), bytes);
+                    return @currentObject;
+                }
             }
 
             IntPtr objectPointer = GetIntPtr(bytes.Length);
@@ -106,7 +107,7 @@ namespace DatagramsNet
             return members;
         }
 
-        public static int GetSizeOf<T>(T @object, ref byte[] bytes)
+        public static int GetSizeOf<T>(T @object, Type @objectType, ref byte[] bytes)
         {
             int size;
             if (@object is not null && @object.GetType().IsClass && @object is not string && @object.GetType().BaseType != typeof(Array))
@@ -117,7 +118,7 @@ namespace DatagramsNet
             }
             else
             {
-                var holder = GetTableHolderInformation(new MemberInformation(@object, @object!.GetType()), bytes, 0);
+                var holder = GetTableHolderInformation(new MemberInformation(@object, objectType), bytes, 0);
                 size = holder.Length;
                 bytes = holder.Bytes;
             }
@@ -128,13 +129,20 @@ namespace DatagramsNet
         private static MemberTableHolder GetTableHolderInformation(MemberInformation member, byte[] bytes, int start)
         {
             object memberObject = member.MemberValue!;
+            bool managedType = (Serializer.TryGetManagedType(member.MemberType, out IManaged? _));
             Memory<byte> memoryBytes = bytes;
             int size;
 
-            if ((memberObject is NullValue || Serializer.TryGetManagedType(member.MemberType, out IManaged? _)) && bytes.Length > 1)
-            {
-                ReadOnlySpan<byte> span = bytes;
 
+            if ((managedType || memberObject is NullValue) && bytes.Length > 1)
+            {
+                if (!(managedType)) 
+                {
+                    size = Marshal.SizeOf(member.MemberType);
+                    return new MemberTableHolder(bytes, size);
+                }
+
+                ReadOnlySpan<byte> span = bytes;
                 int byteLength = (sizeof(int) + start);
                 var newSpan = span[start..(sizeof(int) + byteLength)];
                 size = MemoryMarshal.Read<int>(newSpan);
@@ -142,6 +150,7 @@ namespace DatagramsNet
 
                 return new MemberTableHolder(bytes, size);
             }
+
 
             if (memberObject is string text)
             {
@@ -183,7 +192,8 @@ namespace DatagramsNet
             int totalSize = 0;
             for (int i = 0; i < array.Length; i++)
             {
-                int currentSize = GetSizeOf(array.GetValue(i), ref bytes);
+                var elementValue = array.GetValue(i);
+                int currentSize = GetSizeOf(elementValue, elementValue.GetType(), ref bytes);
                 totalSize += currentSize;
             }
             return totalSize;

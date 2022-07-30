@@ -27,8 +27,8 @@ namespace DatagramsNet
         [Field(2)]
         public ShakeMessage Message { get; set; } = new();
 
-        //[Field(3)]
-        //public int[] Values { get; set; } = new int[] { 1, 7 };
+        [Field(3)]
+        public int[] Values { get; set; } = new int[] { 1, 7 };
 
         public HandshakePacket() { }
 

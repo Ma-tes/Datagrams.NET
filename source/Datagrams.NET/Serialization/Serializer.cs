@@ -67,7 +67,7 @@ namespace DatagramsNet.Serialization
             {
                 spanBytes = spanBytes[lastSize..];
                 byte[] subBytes = spanBytes.ToArray();
-                int size = BinaryHelper.GetSizeOf(membersInformation[i].MemberValue, ref subBytes);
+                int size = BinaryHelper.GetSizeOf(membersInformation[i].MemberValue, membersInformation[i].MemberType, ref subBytes);
 
                 var newBytes = subBytes[0..size];
                 datagramTables[i] = new SubDatagramTable(newBytes, size);

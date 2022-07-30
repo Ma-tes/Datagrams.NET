@@ -8,9 +8,7 @@ namespace DatagramsNet
     public class ShakeMessage 
     {
         public int IdMessage { get; set; }
-
-        public string Message { get; set; } = default;
-
+        public string Message { get; set; } = default!;
         public string[] Keys { get; set; } = new string[] { "One", "Two", "Three"};
     }
 

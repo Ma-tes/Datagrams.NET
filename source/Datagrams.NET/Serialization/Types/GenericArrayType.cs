@@ -1,7 +1,6 @@
 ﻿using DatagramsNet.Serialization.Attributes;
 using DatagramsNet.Serialization.Interfaces;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace DatagramsNet.Serialization.Types
@@ -18,11 +17,12 @@ namespace DatagramsNet.Serialization.Types
         public override byte[] Serialize<TParent>(ObjectTableSize @object)
         {
             var objectArray = (Array)@object.Value!;
+            Type elementType = (@object.Value!).GetType().GetElementType()!;
             int byteLength = @object.Size;
 
 
             int memorySize = byteLength;
-            if (Serializer.TryGetManagedType(@object.Value.GetType().GetElementType()!, out IManaged _))
+            if (Serializer.TryGetManagedType(elementType, out IManaged _))
                 memorySize = memorySize + (objectArray.Length * sizeof(int));
             var bytes = new byte[memorySize + intSize];
 

@@ -1,6 +1,5 @@
 ﻿namespace DatagramsNet.Datagram
 {
-
     internal sealed class DatagramIdentificator
     {
         public ReadOnlyMemory<byte[]> DatagramData { get; set; }

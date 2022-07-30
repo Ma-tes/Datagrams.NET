@@ -193,7 +193,7 @@ namespace DatagramsNet
             for (int i = 0; i < array.Length; i++)
             {
                 var elementValue = array.GetValue(i);
-                int currentSize = GetSizeOf(elementValue, elementValue.GetType(), ref bytes);
+                int currentSize = GetSizeOf(elementValue, elementValue!.GetType(), ref bytes);
                 totalSize += currentSize;
             }
             return totalSize;

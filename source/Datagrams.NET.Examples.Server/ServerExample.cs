@@ -23,7 +23,6 @@ namespace DatagramsNet.Examples.Server
                 {
                     await ServerLogger.LogAsync<NormalPrefix>($"Key:[{i}] -> {newDatagram.Message.Keys[i]}", TimeFormat.Half);
                 }
-                //await ServerLogger.Log<NormalPrefix>($"Id: {handShakeCounter} packet: {newDatagram.GetType()} message: {newDatagram.ShortMessage}", TimeFormat.HALF);
             }
         }
     }

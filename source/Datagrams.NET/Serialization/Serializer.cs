@@ -25,7 +25,7 @@ namespace DatagramsNet.Serialization
 
         public static byte[] SerializeObject(object @object, int size)
         {
-            if (Serializer.TryGetManagedType(@object.GetType(), out IManaged? managedType))
+            if (TryGetManagedType(@object.GetType(), out IManaged? managedType))
             {
                 var table = new ObjectTableSize(@object, size);
                 var bytes = (byte[])serialization.MakeGenericMethod(@object.GetType().BaseType!).Invoke(null, new object[] { managedType, table })!;

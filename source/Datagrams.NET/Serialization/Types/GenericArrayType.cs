@@ -9,7 +9,6 @@ namespace DatagramsNet.Serialization.Types
     internal sealed class GenericArrayType : ManagedType
     {
         private static readonly MethodInfo readMethodInfo = typeof(BinaryHelper).GetMethod(nameof(BinaryHelper.Read))!;
-
         private static readonly MethodInfo elementsMethodInfo = typeof(GenericArrayType).GetMethod(nameof(GenericArrayType.GetArrayElements))!;
 
         private readonly int intSize = sizeof(int);

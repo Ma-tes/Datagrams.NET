@@ -125,7 +125,6 @@ namespace DatagramsNet
             return size;
         }
 
-
         private static MemberTableHolder GetTableHolderInformation(MemberInformation member, byte[] bytes, int start)
         {
             object memberObject = member.MemberValue!;

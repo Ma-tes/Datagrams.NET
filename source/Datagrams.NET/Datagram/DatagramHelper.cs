@@ -6,7 +6,6 @@ namespace DatagramsNet.Datagram
     public static class DatagramHelper
     {
         private static readonly MethodInfo read = typeof(BinaryHelper).GetMethod(nameof(BinaryHelper.Read))!;
-
         private static ImmutableArray<Type> assemblyPackets = ImmutableArray<Type>.Empty;
 
         public static async Task SendDatagramAsync(Func<byte[], Task> sendAction, ReadOnlyMemory<byte[]> data)
@@ -35,6 +34,7 @@ namespace DatagramsNet.Datagram
         public static object SetObjectData(Type datagramType, Memory<byte[]> data)
         {
             var datagram = Activator.CreateInstance(datagramType);
+            //TODO: Serializer.GetMembers
             PropertyInfo[] fields = datagram!.GetType().GetProperties();
             for (int i = 0; i < data.Length; i++)
             {

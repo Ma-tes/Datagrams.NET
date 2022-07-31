@@ -6,14 +6,14 @@ using System.Runtime.InteropServices;
 namespace DatagramsNet.Serialization.Types
 {
     [TypeSerializer(typeof(Array))]
-    internal sealed class GenericArrayType : ManagedType
+    internal sealed class GenericArrayType : ManagedTypeSerializer
     {
         private static readonly MethodInfo readMethodInfo = typeof(BinaryHelper).GetMethod(nameof(BinaryHelper.Read))!;
         private static readonly MethodInfo elementsMethodInfo = typeof(GenericArrayType).GetMethod(nameof(GenericArrayType.GetArrayElements))!;
 
         private readonly int intSize = sizeof(int);
 
-        public override byte[] Serialize<TParent>(ObjectTableSize @object)
+        public override byte[] Serialize<TParent>(SizedObject @object)
         {
             var objectArray = (Array)@object.Value!;
             Type elementType = (@object.Value!).GetType().GetElementType()!;
@@ -21,7 +21,7 @@ namespace DatagramsNet.Serialization.Types
 
 
             int memorySize = byteLength;
-            if (Serializer.TryGetManagedType(elementType, out IManaged _))
+            if (Serializer.TryGetManagedType(elementType, out IManagedSerializer _))
                 memorySize = memorySize + (objectArray.Length * sizeof(int));
             var bytes = new byte[memorySize + intSize];
 

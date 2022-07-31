@@ -1,8 +1,8 @@
 ﻿namespace DatagramsNet.Serialization.Interfaces
 {
-    internal interface IManaged
+    internal interface IManagedSerializer
     {
-        public byte[] Serialize<TParent>(ObjectTableSize @object);
+        public byte[] Serialize<TParent>(SizedObject @object);
 
         public T Deserialize<T>(byte[] bytes);
     }

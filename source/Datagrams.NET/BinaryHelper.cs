@@ -6,12 +6,12 @@ using System.Runtime.InteropServices;
 
 namespace DatagramsNet
 {
-    internal readonly struct ObjectTableSize
+    internal readonly struct SizedObject
     {
         public object? Value { get; }
         public int Size { get; }
 
-        public ObjectTableSize(object? value, int size)
+        public SizedObject(object? value, int size)
         {
             Value = value;
             Size = size;
@@ -55,7 +55,7 @@ namespace DatagramsNet
 
         public static T Read<T>(byte[] bytes)
         {
-            if (Serializer.TryGetManagedType(typeof(T), out IManaged? managedType))
+            if (Serializer.TryGetManagedType(typeof(T), out IManagedSerializer? managedType))
             {
                 var currentObject = (T)(deserialization.MakeGenericMethod(typeof(T)).Invoke(null, new object[] { managedType, bytes }))!;
                 return currentObject;
@@ -128,7 +128,7 @@ namespace DatagramsNet
         private static MemberTableHolder GetTableHolderInformation(MemberInformation member, byte[] bytes, int start)
         {
             object memberObject = member.MemberValue!;
-            bool managedType = (Serializer.TryGetManagedType(member.MemberType, out IManaged? _));
+            bool managedType = (Serializer.TryGetManagedType(member.MemberType, out IManagedSerializer? _));
             Memory<byte> memoryBytes = bytes;
             int size;
 

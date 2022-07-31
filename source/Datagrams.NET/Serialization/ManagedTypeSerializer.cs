@@ -4,18 +4,18 @@ namespace DatagramsNet.Serialization
 {
     internal static class ManagedTypeFactory
     {
-        public static byte[] Serialize<TParent>(IManaged managedType, ObjectTableSize @object) => managedType.Serialize<TParent>(@object);
+        public static byte[] Serialize<TParent>(IManagedSerializer managedType, SizedObject @object) => managedType.Serialize<TParent>(@object);
 
-        public static T Deserialize<T>(IManaged managedType, byte[] bytes) => managedType.Deserialize<T>(bytes);
+        public static T Deserialize<T>(IManagedSerializer managedType, byte[] bytes) => managedType.Deserialize<T>(bytes);
     }
 
-    internal abstract class ManagedType : IManaged
+    internal abstract class ManagedTypeSerializer : IManagedSerializer
     {
         private static readonly Dictionary<ManagedObjectKey, List<SerializeTable>> cacheType = new();
 
         protected static List<SerializeTable>? CurrentTable { get; set; }
 
-        public virtual byte[] Serialize<TParent>(ObjectTableSize @object)
+        public virtual byte[] Serialize<TParent>(SizedObject @object)
         {
             var objectKey = new ManagedObjectKey(typeof(TParent), nameof(@object.Value));
             if (cacheType.ContainsKey(objectKey))
@@ -33,7 +33,6 @@ namespace DatagramsNet.Serialization
             return null!;
         }
 
-        //TODO: Implement ability to check if result is not already cached
         public virtual T Deserialize<T>(byte[] bytes) { return default!; }
     }
 }

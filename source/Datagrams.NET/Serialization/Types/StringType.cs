@@ -5,11 +5,11 @@ using System.Text;
 namespace DatagramsNet.Serialization.Types
 {
     [TypeSerializer(typeof(string))]
-    internal sealed class StringType : ManagedType
+    internal sealed class StringType : ManagedTypeSerializer
     {
         private static readonly byte[] _emptyStringBytes = new byte[4];
 
-        public override byte[] Serialize<TParent>(ObjectTableSize @object)
+        public override byte[] Serialize<TParent>(SizedObject @object)
         {
             if (@object.Value is not string text)
                 return _emptyStringBytes;

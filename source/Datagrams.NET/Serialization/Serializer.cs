@@ -25,9 +25,9 @@ namespace DatagramsNet.Serialization
 
         public static byte[] SerializeObject(object @object, int size)
         {
-            if (TryGetManagedType(@object.GetType(), out IManaged? managedType))
+            if (TryGetManagedType(@object.GetType(), out IManagedSerializer? managedType))
             {
-                var table = new ObjectTableSize(@object, size);
+                var table = new SizedObject(@object, size);
                 var bytes = (byte[])serialization.MakeGenericMethod(@object.GetType().BaseType!).Invoke(null, new object[] { managedType, table })!;
                 return bytes;
             }
@@ -63,6 +63,8 @@ namespace DatagramsNet.Serialization
             var datagramTables = new SubDatagramTable[membersInformation.Length];
 
             int lastSize = 0;
+
+            //TODO: I should simplify this solution
             for (int i = 0; i < membersInformation.Length; i++)
             {
                 spanBytes = spanBytes[lastSize..];
@@ -78,7 +80,7 @@ namespace DatagramsNet.Serialization
             return datagramTables;
         }
 
-        public static bool TryGetManagedType(Type objectType, [NotNullWhen(true)] out IManaged? managedType)
+        public static bool TryGetManagedType(Type objectType, [NotNullWhen(true)] out IManagedSerializer? managedType)
         {
             managedTypes ??= GetManagedTypes().ToArray();
 
@@ -87,7 +89,7 @@ namespace DatagramsNet.Serialization
                 Type serializerType = managedTypes[i].Attribute.SerializerType;
                 if (serializerType == objectType || serializerType == objectType.BaseType)
                 {
-                    managedType = Activator.CreateInstance(managedTypes[i].Type) as IManaged;
+                    managedType = Activator.CreateInstance(managedTypes[i].Type) as IManagedSerializer;
                     return managedType is not null;
                 }
             }

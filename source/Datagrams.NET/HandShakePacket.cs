@@ -5,6 +5,12 @@ using System.Runtime.InteropServices;
 namespace DatagramsNet
 {
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public sealed class KeyHolder 
+    {
+        public int Key { get; set; }
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public class ShakeMessage 
     {
         public int IdMessage { get; set; }
@@ -17,7 +23,7 @@ namespace DatagramsNet
     public sealed class HandshakePacket : IDatagram
     {
         [Field(0)]
-        public int Id => 17;
+        public int Id { get; set; } = 17;
 
         [Field(1)]
         public string ShortMessage { get; set; } = "Test";
@@ -27,6 +33,9 @@ namespace DatagramsNet
 
         [Field(3)]
         public int[] Values { get; set; } = new int[] { 1, 7 };
+
+        [Field(4)]
+        public KeyHolder[] Keys { get; set; } = new KeyHolder[] { new KeyHolder() { Key = 1 }, new KeyHolder() { Key = 7 } };
 
         public HandshakePacket() { }
 

@@ -36,7 +36,7 @@ namespace DatagramsNet.Datagram
         {
             var datagram = Activator.CreateInstance(datagramType);
             PropertyInfo[] fields = datagram!.GetType().GetProperties();
-            for (int i = 1; i < data.Length; i++)
+            for (int i = 0; i < data.Length; i++)
             {
                 Type fieldType = fields[i].PropertyType;
                 var fieldValue = read.MakeGenericMethod(fieldType).Invoke(null, new object[] { data.Span[i] });

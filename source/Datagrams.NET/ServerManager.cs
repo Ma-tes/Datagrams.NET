@@ -21,7 +21,7 @@ namespace DatagramsNet
     public abstract partial class ServerManager : IReciever
     {
         public virtual int PortNumber => 1111;
-        public UdpReciever UdpReciever { get; }
+        public UdpReciever UdpReciever { get; set; }
         public IPEndPoint EndPoint { get; }
 
         public ServerManager(Socket serverSocket, IPAddress ipAddress)

@@ -21,8 +21,7 @@ namespace DatagramsNet.Serialization.Types
 
 
             int memorySize = byteLength;
-            if (Serializer.TryGetManagedType(elementType, out IManagedSerializer _))
-                memorySize = memorySize + (objectArray.Length * sizeof(int));
+            memorySize = memorySize + GetAdditionalSizeOf(elementType, objectArray.Length, objectArray.GetValue(0)!);
             var bytes = new byte[memorySize + intSize];
 
             Span<byte> spanBytes = bytes;
@@ -45,7 +44,7 @@ namespace DatagramsNet.Serialization.Types
             Type elementType = typeof(T).GetElementType()!;
             object arrayHolder = (T)(object)((Array.CreateInstance(elementType, 1)));
 
-            var subDatagram = ((IEnumerable<byte[]>)elementsMethodInfo.MakeGenericMethod(elementType).Invoke(null, new object[] { bytes, arrayHolder })!).ToArray();//GetArrayElements(bytes, arrayHolder).ToArray();
+            var subDatagram = ((IEnumerable<byte[]>)elementsMethodInfo.MakeGenericMethod(elementType).Invoke(null, new object[] { bytes })!).ToArray();//GetArrayElements(bytes, arrayHolder).ToArray();
             var elements = Array.CreateInstance(elementType, subDatagram.Length);
             for (int i = 0; i < subDatagram.Length; i++)
             {
@@ -55,7 +54,7 @@ namespace DatagramsNet.Serialization.Types
             return (T)(object)(elements);
         }
 
-        public static IEnumerable<byte[]> GetArrayElements<TElement>(byte[] bytes, object array)
+        public static IEnumerable<byte[]> GetArrayElements<TElement>(byte[] bytes)
         {
             int offset = 0;
             object? nullHolder = null;
@@ -73,6 +72,27 @@ namespace DatagramsNet.Serialization.Types
                 bytes = bytes[size..];
                 yield return oldBytes;
             }
+        }
+
+        private static int GetAdditionalSizeOf(Type elementType, int length, object element)
+        {
+            int size;
+            if (Serializer.TryGetManagedType(elementType, out IManagedSerializer _))
+                size = sizeof(int);
+            else
+               size = GetClassAdditionalSize(BinaryHelper.GetMembersInformation(element));
+            return length * size;
+        }
+
+        private static int GetClassAdditionalSize(ReadOnlySpan<MemberInformation> members) 
+        {
+            int totalSize = 0;
+            for (int i = 0; i < members.Length; i++)
+            {
+                if (Serializer.TryGetManagedType(members[i].MemberType, out IManagedSerializer _))
+                    totalSize = totalSize + sizeof(int);
+            }
+            return totalSize;
         }
     }
 }

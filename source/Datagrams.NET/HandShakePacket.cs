@@ -5,9 +5,11 @@ using System.Runtime.InteropServices;
 namespace DatagramsNet
 {
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public sealed class KeyHolder 
+    public sealed class KeyHolder
     {
         public int Key { get; set; }
+
+        public string Value { get; set; }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -35,7 +37,7 @@ namespace DatagramsNet
         public int[] Values { get; set; } = new int[] { 1, 7 };
 
         [Field(4)]
-        public KeyHolder[] Keys { get; set; } = new KeyHolder[] { new KeyHolder() { Key = 1 }, new KeyHolder() { Key = 7 } };
+        public KeyHolder[] Keys { get; set; } = new KeyHolder[] { new KeyHolder() { Key = 1, Value = "Test"}, new KeyHolder() { Key = 7, Value = "Test"} };
 
         public HandshakePacket() { }
 

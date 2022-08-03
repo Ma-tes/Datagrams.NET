@@ -21,7 +21,7 @@ namespace DatagramsNet.Serialization.Types
 
 
             int memorySize = byteLength;
-            memorySize = memorySize + GetAdditionalSizeOf(elementType, objectArray.Length, objectArray.GetValue(0)!);
+            memorySize = memorySize + GetAdditionalSizeOf(elementType, objectArray.Length);
             var bytes = new byte[memorySize + intSize];
 
             Span<byte> spanBytes = bytes;
@@ -57,7 +57,7 @@ namespace DatagramsNet.Serialization.Types
         public static IEnumerable<byte[]> GetArrayElements<TElement>(byte[] bytes)
         {
             int offset = 0;
-            object? nullHolder = null;
+            object? nullHolder = typeof(TElement).IsClass && !(Serializer.TryGetManagedType(typeof(TElement), out IManagedSerializer? _)) ? Activator.CreateInstance<TElement>() : null;
 
             while (bytes.Length > 1)
             {
@@ -74,13 +74,13 @@ namespace DatagramsNet.Serialization.Types
             }
         }
 
-        private static int GetAdditionalSizeOf(Type elementType, int length, object element)
+        private static int GetAdditionalSizeOf(Type elementType, int length)
         {
             int size;
             if (Serializer.TryGetManagedType(elementType, out IManagedSerializer _))
                 size = sizeof(int);
             else
-               size = GetClassAdditionalSize(BinaryHelper.GetMembersInformation(element));
+               size = GetClassAdditionalSize(BinaryHelper.GetMembersInformation(Activator.CreateInstance(elementType)!));
             return length * size;
         }
 

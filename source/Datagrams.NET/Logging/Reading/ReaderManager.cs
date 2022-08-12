@@ -10,8 +10,7 @@ namespace DatagramsNet.Logging.Reading
 {
     public static class ReaderManager
     {
-        private const char PrefixCharacter = '>';
-        private const char SeparatorCharacter = ' ';
+        private const string Prefix = "> ";
 
         private static readonly MethodInfo commandFunctionHolderMethodInfo = typeof(CommandFunctionHolder).GetMethod(nameof(CommandFunctionHolder.GetFunction))!;
         private static readonly Dictionary<string, Command> commands =
@@ -21,26 +20,30 @@ namespace DatagramsNet.Logging.Reading
             .SelectMany(assembly => assembly.GetTypes().Where(type => type.GetCustomAttributes<CommandAttribute>(true).Any()))
             .ToDictionary(type => type.GetCustomAttribute<CommandAttribute>()!.Command, type => (Command)Activator.CreateInstance(type)!);
 
-        private static int reading = 0;
+        private const int ReaderIdle = 0;
+        private const int ReaderRunning = 1;
+        private static int readerState = ReaderIdle;
 
         public static void StartReading()
         {
-            // Prevent this method from being ran multiple times
-            if (Interlocked.Exchange(ref reading, 1) == 1)
-                return;
+            if (Interlocked.Exchange(ref readerState, ReaderRunning) == ReaderRunning)
+            {
+                return; // Already running
+            }
 
             Task.Run(async () =>
             {
                 while (true)
                 {
-                    await ReadAsync();
+                    await ReadAndExecuteCommandAsync();
                 }
-            }).Wait();
+            }).Wait(); // TODO Remove usage of Task.Wait, ideally this shouldn't block
         }
 
-        private static async Task ReadAsync()
+        private static async Task ReadAndExecuteCommandAsync()
         {
-            Console.Write($"{PrefixCharacter} ");
+            Console.Write(Prefix);
+
             // Read console input
             string? input = Console.ReadLine();
             if (string.IsNullOrWhiteSpace(input))
@@ -90,6 +93,8 @@ namespace DatagramsNet.Logging.Reading
             }
         }
 
+        // Splits string into tokens by whitespace, keeping text surrounded by double quotes
+        // as a single token. For example: abc "def ghi" jkl --> "abc", "def ghi", "jkl"
         private static List<string> Tokenize(string text)
         {
             var tokens = new List<string>();
@@ -124,6 +129,7 @@ namespace DatagramsNet.Logging.Reading
             return tokens;
         }
 
+        // Converts strings into command arguments
         private static object[]? GetArguments(Command command, Span<string> args)
         {
             var arguments = new object[args.Length];

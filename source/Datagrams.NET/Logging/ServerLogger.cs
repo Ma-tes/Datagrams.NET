@@ -13,53 +13,63 @@ namespace DatagramsNet.Logging
 
     public static class ServerLogger
     {
-        private static readonly List<IPrefix> prefixes = new();
+        private static readonly ConcurrentDictionary<Type, IPrefix> prefixes = new();
+        private static readonly Queue<Message> messageQueue = new();
+        private static readonly SemaphoreSlim messageQueueSemaphore = new(initialCount: 0);
 
-        private static readonly ConcurrentQueue<Message> queueMessages = new();
+        private const int WriterIdle = 0;
+        private const int WriterRunning = 1;
+        private static int writerState = WriterIdle;
 
-        public static async Task LogAsync<TSource>(string message, TimeFormat timeFormat = TimeFormat.Half, int delay = 0) where TSource : IPrefix, new()
+        public static void Log<TPrefix>(string message, TimeFormat timeFormat = TimeFormat.Half) where TPrefix : IPrefix, new()
         {
-            var prefix = GetPrefix<TSource>();
-            var dateTime = await GetDateText(timeFormat);
-            lock (queueMessages)
-            {
-                queueMessages.Enqueue(new Message() { SingleMessage = $"<{dateTime}> {message}", Prefix = prefix });
-            }
+            TPrefix prefix = GetPrefixInstance<TPrefix>();
+            string dateTime = GetDateText(timeFormat);
+            messageQueue.Enqueue(new Message() { Content = $"<{dateTime}> {message}", Prefix = prefix });
+            messageQueueSemaphore.Release();
+        }
+
+        public static async Task LogAsync<TPrefix>(string message, TimeFormat timeFormat = TimeFormat.Half, int delay = 0) where TPrefix : IPrefix, new()
+        {
+            TPrefix prefix = GetPrefixInstance<TPrefix>();
+            string dateTime = GetDateText(timeFormat);
             await Task.Delay(delay);
+            messageQueue.Enqueue(new Message() { Content = $"<{dateTime}> {message}", Prefix = prefix });
+            messageQueueSemaphore.Release();
         }
 
         public static void StartConsoleWriter()
         {
+            if (Interlocked.Exchange(ref writerState, WriterRunning) == WriterRunning)
+            {
+                return; // Already running
+            }
+
             Task.Run(async () =>
             {
                 while (true)
                 {
-                    if (!queueMessages.IsEmpty && queueMessages.TryDequeue(out Message message))
+                    await messageQueueSemaphore.WaitAsync();
+                    if (messageQueue.TryDequeue(out Message message))
                     {
                         if (message.Prefix is not null)
                             await message.Prefix.WritePrefixAsync();
-                        await Console.Out.WriteLineAsync(message.SingleMessage);
+                        await Console.Out.WriteLineAsync(message.Content);
                     }
                 }
             });
         }
 
-        private static Task<string> GetDateText(TimeFormat timeFormat)
+        private static string GetDateText(TimeFormat timeFormat)
         {
             if (timeFormat == TimeFormat.None)
-                return Task.FromResult(string.Empty);
-            return timeFormat == TimeFormat.Half ? Task.FromResult(DateTime.Now.ToShortTimeString()) : Task.FromResult(DateTime.Now.ToLongTimeString());
+                return string.Empty;
+            return timeFormat == TimeFormat.Half ? DateTime.Now.ToShortTimeString() : DateTime.Now.ToLongTimeString();
         }
 
-        public static TSource GetPrefix<TSource>() where TSource : IPrefix, new()
+        private static TSource GetPrefixInstance<TSource>() where TSource : IPrefix, new()
         {
-            for (int i = 0; i < prefixes.Count; i++)
-            {
-                if (typeof(TSource) == prefixes[i].GetType())
-                    return (TSource)prefixes[i];
-            }
-            prefixes.Add(new TSource());
-            return (TSource)prefixes[^1];
+            return (TSource)prefixes.GetOrAdd(typeof(TSource), _ => new TSource());
         }
     }
 }

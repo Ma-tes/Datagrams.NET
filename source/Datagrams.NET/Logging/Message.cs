@@ -2,10 +2,9 @@
 
 namespace DatagramsNet.Logging
 {
-    public struct Message
+    internal readonly struct Message
     {
-        public string SingleMessage { get; set; }
-
-        public IPrefix Prefix { get; set; }
+        public string Content { get; init; }
+        public IPrefix? Prefix { get; init; }
     }
 }

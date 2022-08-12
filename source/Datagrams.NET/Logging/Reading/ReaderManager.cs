@@ -52,7 +52,7 @@ namespace DatagramsNet.Logging.Reading
             // Try to find a matching command
             if (!commands.TryGetValue(tokens[0], out Command? command))
             {
-                _ = ServerLogger.LogAsync<WarningPrefix>("Command was not found.", TimeFormat.Half);
+                ServerLogger.Log<WarningPrefix>("Command was not found.", TimeFormat.Half);
                 return;
             }
 
@@ -81,11 +81,11 @@ namespace DatagramsNet.Logging.Reading
             {
                 if (result.Success)
                 {
-                    _ = ServerLogger.LogAsync<NormalPrefix>(result.Message, TimeFormat.Half);
+                    ServerLogger.Log<NormalPrefix>(result.Message, TimeFormat.Half);
                 }
                 else
                 {
-                    _ = ServerLogger.LogAsync<ErrorPrefix>(result.Message, TimeFormat.Half);
+                    ServerLogger.Log<ErrorPrefix>(result.Message, TimeFormat.Half);
                 }
             }
         }
@@ -137,7 +137,7 @@ namespace DatagramsNet.Logging.Reading
                 }
                 else
                 {
-                    _ = ServerLogger.LogAsync<ErrorPrefix>($"Received an invalid {factory.Name} argument '{args[i]}'.", TimeFormat.Half);
+                    ServerLogger.Log<ErrorPrefix>($"Received an invalid {factory.Name} argument '{args[i]}'.", TimeFormat.Half);
                     return null;
                 }
             }

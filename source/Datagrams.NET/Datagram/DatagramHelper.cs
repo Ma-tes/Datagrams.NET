@@ -31,15 +31,15 @@ namespace DatagramsNet.Datagram
             return datagramList.ToArray();
         }
 
-        public static object SetObjectData(Type datagramType, Memory<byte[]> data)
+        public static object SetObjectData(Type datagramType, ReadOnlyMemory<byte>[] data)
         {
             var datagram = Activator.CreateInstance(datagramType);
-            //TODO: Serializer.GetMembers
+            // TODO: Serializer.GetMembers
             PropertyInfo[] fields = datagram!.GetType().GetProperties();
             for (int i = 0; i < data.Length; i++)
             {
                 Type fieldType = fields[i].PropertyType;
-                var fieldValue = read.MakeGenericMethod(fieldType).Invoke(null, new object[] { data.Span[i] });
+                var fieldValue = read.MakeGenericMethod(fieldType).Invoke(null, new object[] { data[i] });
                 fields[i].SetValue(datagram, fieldValue);
             }
             return datagram;

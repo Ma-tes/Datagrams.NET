@@ -16,6 +16,26 @@ namespace DatagramsNet
         public IPAddress IPAddress { get; }
         public Socket ServerSocket { get; }
         public List<Client> Clients { get; } = new();
+
+        public static ServerManager CreateUdpServer(Socket serverSocket, IPAddress ipAddress, Func<object, EndPoint, ValueTask> receiveFunc)
+        {
+            return new UdpServer(serverSocket, ipAddress, receiveFunc);
+        }
+
+        private sealed class UdpServer : ServerManager
+        {
+            private readonly Func<object, EndPoint, ValueTask> receive;
+
+            public UdpServer(Socket serverSocket, IPAddress ipAddress, Func<object, EndPoint, ValueTask> receive) : base(serverSocket, ipAddress)
+            {
+                this.receive = receive;
+            }
+
+            public override async Task OnRecieveAsync(object datagram, EndPoint ipAddress)
+            {
+                await receive(datagram, ipAddress);
+            }
+        }
     }
 
     public abstract partial class ServerManager : IReciever

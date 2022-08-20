@@ -7,9 +7,8 @@ namespace DatagramsNet
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public sealed class KeyHolder
     {
-        public int Key { get; set; }
-
-        public string Value { get; set; }
+        public int Key { get; init; }
+        public string Value { get; init; }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]

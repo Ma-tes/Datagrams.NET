@@ -7,18 +7,6 @@ using System.Net.Sockets;
 
 namespace DatagramsNet
 {
-    public readonly struct SubDatagramTable
-    {
-        public byte[] Bytes { get; }
-        public int Length { get; }
-
-        public SubDatagramTable(byte[] bytes, int length)
-        {
-            Bytes = bytes;
-            Length = length;
-        }
-    }
-
     public sealed class UdpReciever
     {
         private readonly Socket _listeningSocket;

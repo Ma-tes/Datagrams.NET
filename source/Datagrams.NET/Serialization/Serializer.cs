@@ -42,40 +42,32 @@ namespace DatagramsNet.Serialization
             return null!;
         }
 
-        public static object DeserializeBytes(Type datagramType, byte[] datagramData)
+        public static object DeserializeBytes(Type datagramType, ReadOnlyMemory<byte> datagramData)
         {
             var subData = GetSubDatagrams(datagramType, datagramData);
-            var bytes = new List<byte[]>();
-            for (int i = 0; i < subData.Length; i++)
-            {
-                bytes.Add(subData[i].Bytes);
-            }
-
-            return DatagramHelper.SetObjectData(datagramType, bytes.ToArray().AsMemory());
+            return DatagramHelper.SetObjectData(datagramType, subData);
         }
 
-        public static SubDatagramTable[] GetSubDatagrams(Type datagramType, byte[] datagramData)
+        public static ReadOnlyMemory<byte>[] GetSubDatagrams(Type datagramType, ReadOnlyMemory<byte> datagramData)
         {
-            Span<byte> spanBytes = datagramData;
             var datagramInstance = Activator.CreateInstance(datagramType);
 
-            var membersInformation = BinaryHelper.GetMembersInformation(datagramInstance!).ToArray();
-            var datagramTables = new SubDatagramTable[membersInformation.Length];
+            var membersInformation = BinaryHelper.GetMembersInformation(datagramInstance!);
+            var datagramTables = new ReadOnlyMemory<byte>[membersInformation.Length];
 
             int lastSize = 0;
 
-            //TODO: I should simplify this solution
+            // TODO: I should simplify this solution
             for (int i = 0; i < membersInformation.Length; i++)
             {
-                spanBytes = spanBytes[lastSize..];
-                byte[] subBytes = spanBytes.ToArray();
+                datagramData = datagramData[lastSize..];
+                ReadOnlyMemory<byte> subBytes = datagramData;
                 int size = BinaryHelper.GetSizeOf(membersInformation[i].MemberValue, membersInformation[i].MemberType, ref subBytes);
 
-                var newBytes = subBytes[0..size];
-                datagramTables[i] = new SubDatagramTable(newBytes, size);
+                datagramTables[i] = subBytes[0..size];
 
                 lastSize = size;
-                spanBytes = subBytes;
+                datagramData = subBytes;
             }
             return datagramTables;
         }

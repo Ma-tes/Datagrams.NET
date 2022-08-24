@@ -1,6 +1,7 @@
 ﻿using DatagramsNet.Serialization.Attributes;
 using DatagramsNet.Serialization.Interfaces;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace DatagramsNet.Serialization.Types
@@ -11,8 +12,6 @@ namespace DatagramsNet.Serialization.Types
         private static readonly MethodInfo readMethodInfo = typeof(BinaryHelper).GetMethod(nameof(BinaryHelper.Read))!;
         private static readonly MethodInfo elementsMethodInfo = typeof(GenericArrayType).GetMethod(nameof(GenericArrayType.GetArrayElements))!;
 
-        private readonly int intSize = sizeof(int);
-
         public override byte[] Serialize<TParent>(SizedObject @object)
         {
             var objectArray = (Array)@object.Value!;
@@ -21,8 +20,8 @@ namespace DatagramsNet.Serialization.Types
 
 
             int memorySize = byteLength;
-            memorySize = memorySize + GetAdditionalSizeOf(elementType, objectArray.Length);
-            var bytes = new byte[memorySize + intSize];
+            memorySize += GetAdditionalSizeOf(elementType, objectArray.Length);
+            var bytes = new byte[sizeof(int) + memorySize];
 
             Span<byte> spanBytes = bytes;
             MemoryMarshal.Write(spanBytes, ref memorySize);
@@ -31,9 +30,9 @@ namespace DatagramsNet.Serialization.Types
             for (int i = 0; i < objectArray.Length; i++)
             {
                 object currentValue = objectArray.GetValue(i)!;
-                Span<byte> span = BinaryHelper.Write(currentValue).AsSpan<byte>();
+                Span<byte> span = BinaryHelper.Write(currentValue);
 
-                span.CopyTo(spanBytes[(intSize + totalSize)..]);
+                span.CopyTo(spanBytes);
                 totalSize += span.Length;
             }
             return bytes.ToArray();
@@ -42,7 +41,6 @@ namespace DatagramsNet.Serialization.Types
         public override T Deserialize<T>(byte[] bytes)
         {
             Type elementType = typeof(T).GetElementType()!;
-            object arrayHolder = (T)(object)((Array.CreateInstance(elementType, 1)));
 
             var subDatagram = ((IEnumerable<byte[]>)elementsMethodInfo.MakeGenericMethod(elementType).Invoke(null, new object[] { bytes })!).ToArray();//GetArrayElements(bytes, arrayHolder).ToArray();
             var elements = Array.CreateInstance(elementType, subDatagram.Length);
@@ -54,23 +52,29 @@ namespace DatagramsNet.Serialization.Types
             return (T)(object)(elements);
         }
 
-        public static IEnumerable<byte[]> GetArrayElements<TElement>(byte[] bytes)
+        public static IEnumerable<ReadOnlyMemory<byte>> GetArrayElements<TElement>(ReadOnlyMemory<byte> bytes)
         {
-            int offset = 0;
-            object? nullHolder = typeof(TElement).IsClass && !(Serializer.TryGetManagedType(typeof(TElement), out IManagedSerializer? _)) ? Activator.CreateInstance<TElement>() : null;
+            object? nullHolder = typeof(TElement).IsClass && !(Serializer.TryGetManagedType(typeof(TElement), out IManagedSerializer? _)) ?
+                Activator.CreateInstance<TElement>() :
+                null;
 
-            while (bytes.Length > 1)
+            if (typeof(TElement).IsClass)
             {
-                var bytesCopy = bytes.Length;
-                int size = BinaryHelper.GetSizeOf(nullHolder, typeof(TElement), ref bytes);
-
-                int difference = bytes.Length - size;
-                size = difference < 0 ? size + difference : size;
-
-                byte[] oldBytes = bytes[0..size];
-                offset += bytesCopy - difference;
-                bytes = bytes[size..];
-                yield return oldBytes;
+                while (!bytes.IsEmpty)
+                {
+                    int size = BinaryHelper.GetSizeOf(nullHolder, typeof(TElement), ref bytes);
+                    yield return bytes[..size];
+                    bytes = bytes[size..];
+                }
+            }
+            else
+            {
+                int size = Unsafe.SizeOf<TElement>();
+                while (!bytes.IsEmpty)
+                {
+                    yield return bytes[..size];
+                    bytes = bytes[size..];
+                }
             }
         }
 
@@ -90,7 +94,7 @@ namespace DatagramsNet.Serialization.Types
             for (int i = 0; i < members.Length; i++)
             {
                 if (Serializer.TryGetManagedType(members[i].MemberType, out IManagedSerializer _))
-                    totalSize = totalSize + sizeof(int);
+                    totalSize += sizeof(int);
             }
             return totalSize;
         }

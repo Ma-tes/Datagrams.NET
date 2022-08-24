@@ -1,6 +1,5 @@
 ﻿using DatagramsNet.Serialization;
 using DatagramsNet.Serialization.Interfaces;
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
@@ -18,25 +17,13 @@ namespace DatagramsNet
         }
     }
 
-    public readonly struct MemberTableHolder
-    {
-        public byte[] Bytes { get; }
-        public int Length { get; }
-
-        public MemberTableHolder(byte[] bytes, int length)
-        {
-            Bytes = bytes;
-            Length = length;
-        }
-    }
-
     public static class BinaryHelper
     {
         private static readonly MethodInfo deserialization = typeof(ManagedTypeFactory).GetMethod(nameof(ManagedTypeFactory.Deserialize))!;
 
         public static byte[] Write(object @object)
         {
-            byte[] byteHolder = Array.Empty<byte>();
+            var byteHolder = ReadOnlyMemory<byte>.Empty;
             int size = GetSizeOf(@object, @object.GetType(), ref byteHolder);
             var buffer = Serializer.SerializeObject(@object, size);
 
@@ -44,7 +31,7 @@ namespace DatagramsNet
             {
                 var fixedBuffer = new byte[size];
 
-                IntPtr pointer = GetIntPtr(size);
+                IntPtr pointer = Marshal.AllocHGlobal(size);
                 Marshal.StructureToPtr(@object, pointer, false);
                 Marshal.Copy(pointer, fixedBuffer, 0, fixedBuffer.Length);
                 return fixedBuffer;
@@ -53,7 +40,7 @@ namespace DatagramsNet
             return buffer;
         }
 
-        public static T Read<T>(byte[] bytes)
+        public static unsafe T Read<T>(ReadOnlyMemory<byte> bytes)
         {
             if (Serializer.TryGetManagedType(typeof(T), out IManagedSerializer? managedType))
             {
@@ -61,7 +48,7 @@ namespace DatagramsNet
                 return currentObject;
             }
 
-            if (typeof(T).IsClass) 
+            if (typeof(T).IsClass)
             {
                 var @object = Activator.CreateInstance<T>();
                 var members = GetMembersInformation(@object!).ToArray();
@@ -72,8 +59,8 @@ namespace DatagramsNet
                 }
             }
 
-            IntPtr objectPointer = GetIntPtr(bytes.Length);
-            Marshal.Copy(bytes, 0, objectPointer, bytes.Length);
+            IntPtr objectPointer = Marshal.AllocHGlobal(bytes.Length);
+            bytes.Span.CopyTo(new Span<byte>(objectPointer.ToPointer(), bytes.Length));
             return (T)Marshal.PtrToStructure(objectPointer, typeof(T))!;
         }
 
@@ -107,7 +94,7 @@ namespace DatagramsNet
             return members;
         }
 
-        public static int GetSizeOf<T>(T @object, Type @objectType, ref byte[] bytes)
+        public static int GetSizeOf<T>(T @object, Type @objectType, ref ReadOnlyMemory<byte> bytes)
         {
             int size;
             if (@object is not null && @object.GetType().IsClass && @object is not string && @object.GetType().BaseType != typeof(Array))
@@ -118,75 +105,66 @@ namespace DatagramsNet
             }
             else
             {
-                var holder = GetTableHolderInformation(new MemberInformation(@object, objectType), bytes, 0);
+                var holder = GetTableHolderInformation(new MemberInformation(@object, objectType), bytes);
                 size = holder.Length;
-                bytes = holder.Bytes;
+                bytes = holder;
             }
             return size;
         }
 
-        private static MemberTableHolder GetTableHolderInformation(MemberInformation member, byte[] bytes, int start)
+        private static ReadOnlyMemory<byte> GetTableHolderInformation(MemberInformation member, ReadOnlyMemory<byte> bytes)
         {
             object memberObject = member.MemberValue!;
-            bool managedType = (Serializer.TryGetManagedType(member.MemberType, out IManagedSerializer? _));
-            Memory<byte> memoryBytes = bytes;
+            bool isManagedType = Serializer.TryGetManagedType(member.MemberType, out IManagedSerializer? _);
             int size;
 
-
-            if ((managedType || memberObject is NullValue) && bytes.Length > 1)
+            if ((isManagedType || memberObject is NullValue) && bytes.Length >= sizeof(int))
             {
-                if (!(managedType)) 
+                if (!isManagedType)
                 {
                     size = Marshal.SizeOf(member.MemberType);
-                    return new MemberTableHolder(bytes, size);
+                    return bytes.Length >= size ? bytes[0..size] : bytes;
                 }
 
-                ReadOnlySpan<byte> span = bytes;
-                int byteLength = (sizeof(int) + start);
-                var newSpan = span[start..(sizeof(int) + byteLength)];
-                size = MemoryMarshal.Read<int>(newSpan);
-                bytes = memoryBytes.RemoveAtIndexes(sizeof(int), start);
-
-                return new MemberTableHolder(bytes, size);
+                size = MemoryMarshal.Read<int>(bytes.Span);
+                return bytes.Slice(sizeof(int), size);
             }
 
 
             if (memberObject is string text)
             {
                 size = text.Length * sizeof(byte);
-                return new MemberTableHolder(bytes, size);
+                return bytes.Length >= size ? bytes[0..size] : bytes;
             }
 
-            if (memberObject is Array || member.MemberType.BaseType == typeof(Array))
+            if (memberObject is Array array)
             {
-                var memberArray = ((Array)memberObject!);
-                size = GetSizeOfArray(memberArray, ref bytes);
-                return new MemberTableHolder(bytes, size);
+                size = GetSizeOfArray(array, ref bytes);
+                return bytes.Length >= size ? bytes[0..size] : bytes;
             }
 
             size = Marshal.SizeOf(memberObject!);
-            return new MemberTableHolder(bytes, size);
+            return bytes.Length >= size ? bytes[0..size] : bytes;
         }
 
-        private static int GetSizeOfClass(MemberInformation[] members, byte[] bytes)
+        private static int GetSizeOfClass(MemberInformation[] members, ReadOnlyMemory<byte> bytes)
         {
-            byte[] bytesCopy = bytes;
             int totalSize = 0;
             int offset = 0;
 
             foreach (var member in members)
             {
-                var tableHolder = GetTableHolderInformation(member, bytesCopy, totalSize);
-                int difference = bytesCopy.Length - tableHolder.Bytes.Length;
+                var tableHolder = GetTableHolderInformation(member, bytes[totalSize..]);
+                int difference = bytes.Length - tableHolder.Length;
 
-                bytesCopy = tableHolder.Bytes;
+                bytes = tableHolder;
                 totalSize += tableHolder.Length;
                 offset += difference;
             }
             return totalSize + offset;
         }
 
-        public static int GetSizeOfArray(Array array, ref byte[] bytes)
+        public static int GetSizeOfArray(Array array, ref ReadOnlyMemory<byte> bytes)
         {
             int totalSize = 0;
             for (int i = 0; i < array.Length; i++)
@@ -197,52 +175,5 @@ namespace DatagramsNet
             }
             return totalSize;
         }
-
-        public static byte[] RemoveAtIndexes(this Memory<byte> bytes, int length, int shift) 
-        {
-            Memory<byte> holder = bytes;
-            for (int i = 0; i < length; i++)
-            {
-                TryRemoveAt(ref holder, shift);
-            }
-            return holder.ToArray();
-        }
-
-        private static bool TryRemoveAt(ref Memory<byte> bytes, int index)
-        {
-            Memory<byte> spanResult = new byte[bytes.Length - 1];
-
-            if (index != 0) 
-            {
-                var spanSlice = bytes.Span[0..index];
-                spanSlice.CopyTo(spanResult.Span);
-            }
-
-            int currentIndex = (index + 1);
-            Memory<byte> newSpanSlice = bytes.Span[currentIndex..].ToArray();
-            bool bytesCheck = ReplaceBytes(ref spanResult, newSpanSlice);
-
-            if(bytesCheck)
-                bytes = spanResult;
-            return bytesCheck;
-        }
-
-        private static bool ReplaceBytes([NotNull] ref Memory<byte> source, Memory<byte> newData) 
-        {
-            if (source.Span.Length < newData.Span.Length)
-                return false;
-
-            Span<byte> span = source.Span;
-            int lengthDifference = (source.Length - newData.Length);
-            for (int i = 0; i < newData.Length; i++)
-            {
-                int index = i + (lengthDifference);
-                span[index] = newData.Span[i];
-            }
-            source = span.ToArray();
-            return true;
-        }
-
-        private static IntPtr GetIntPtr(int size) => Marshal.AllocHGlobal(size);
     }
 }

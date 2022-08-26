@@ -1,5 +1,6 @@
 ﻿using DatagramsNet.Serialization;
 using DatagramsNet.Serialization.Interfaces;
+using DatagramsNet.Serialization.Types;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -37,7 +38,15 @@ namespace DatagramsNet
         public static byte[] Write(object @object)
         {
             byte[] byteHolder = Array.Empty<byte>();
-            int size = GetSizeOf(@object, @object.GetType(), ref byteHolder);
+            Type objectType;
+            if (@object is Type) 
+            {
+                objectType = typeof(Type);
+            }
+            else
+                objectType = @object.GetType();
+
+            int size = GetSizeOf(@object, objectType, ref byteHolder);
             var buffer = Serializer.SerializeObject(@object, size);
 
             if (buffer is null)
@@ -55,7 +64,8 @@ namespace DatagramsNet
 
         public static T Read<T>(byte[] bytes)
         {
-            if (Serializer.TryGetManagedType(typeof(T), out IManagedSerializer? managedType))
+            var currentType = typeof(T) == typeof(Type) ? typeof(TypeInfoType) : typeof(T);
+            if (Serializer.TryGetManagedType(currentType, out IManagedSerializer? managedType))
             {
                 var currentObject = (T)(deserialization.MakeGenericMethod(typeof(T)).Invoke(null, new object[] { managedType, bytes }))!;
                 return currentObject;
@@ -110,7 +120,7 @@ namespace DatagramsNet
         public static int GetSizeOf<T>(T @object, Type @objectType, ref byte[] bytes)
         {
             int size;
-            if (@object is not null && @object.GetType().IsClass && @object is not string && @object.GetType().BaseType != typeof(Array))
+            if (@object is not null && (objectType.IsClass) && @object is not string && @object.GetType().BaseType != typeof(Array) && @objectType != typeof(Type))
             {
                 var membersInformation = GetMembersInformation(@object!).ToArray();
                 var sizeTable = GetSizeOfClass(membersInformation, bytes);
@@ -118,7 +128,8 @@ namespace DatagramsNet
             }
             else
             {
-                var holder = GetTableHolderInformation(new MemberInformation(@object, objectType), bytes, 0);
+                var currentType = objectType == typeof(Type) ? typeof(TypeInfoType) : objectType;
+                var holder = GetTableHolderInformation(new MemberInformation(@object, currentType), bytes, 0);
                 size = holder.Length;
                 bytes = holder.Bytes;
             }
@@ -132,12 +143,11 @@ namespace DatagramsNet
             Memory<byte> memoryBytes = bytes;
             int size;
 
-
-            if ((managedType || memberObject is NullValue) && bytes.Length > 1)
+            if (((managedType || memberObject is NullValue) && bytes.Length > 1))
             {
                 if (!(managedType)) 
                 {
-                    size = Marshal.SizeOf(member.MemberType);
+                    size = member.MemberType == typeof(Type) ? 4 : Marshal.SizeOf(member.MemberType);
                     return new MemberTableHolder(bytes, size);
                 }
 
@@ -151,6 +161,10 @@ namespace DatagramsNet
             }
 
 
+            if (memberObject is Type newType)
+            {
+                return new MemberTableHolder(bytes, 4 + ((newType.FullName!).Length));
+            }
             if (memberObject is string text)
             {
                 size = text.Length * sizeof(byte);

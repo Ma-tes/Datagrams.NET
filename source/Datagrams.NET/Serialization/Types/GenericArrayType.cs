@@ -57,7 +57,7 @@ namespace DatagramsNet.Serialization.Types
         public static IEnumerable<byte[]> GetArrayElements<TElement>(byte[] bytes)
         {
             int offset = 0;
-            object? nullHolder = typeof(TElement).IsClass && !(Serializer.TryGetManagedType(typeof(TElement), out IManagedSerializer? _)) ? Activator.CreateInstance<TElement>() : null;
+            object? nullHolder = (typeof(TElement).IsClass && !(Serializer.TryGetManagedType(typeof(TElement), out IManagedSerializer? _)) ? Activator.CreateInstance<TElement>() : null);
 
             while (bytes.Length > 1)
             {

@@ -1,6 +1,8 @@
-﻿using DatagramsNet.Datagram;
+﻿using DatagramsNet.Attributes;
+using DatagramsNet.Datagram;
 using DatagramsNet.Serialization.Attributes;
 using DatagramsNet.Serialization.Interfaces;
+using DatagramsNet.Serialization.Types;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
@@ -25,7 +27,8 @@ namespace DatagramsNet.Serialization
 
         public static byte[] SerializeObject(object @object, int size)
         {
-            if (TryGetManagedType(@object.GetType(), out IManagedSerializer? managedType))
+            var currentType = @object is Type ? typeof(TypeInfoType) : @object.GetType();
+            if (TryGetManagedType(currentType, out IManagedSerializer? managedType))
             {
                 var table = new SizedObject(@object, size);
                 var bytes = (byte[])serialization.MakeGenericMethod(@object.GetType().BaseType!).Invoke(null, new object[] { managedType, table })!;
@@ -62,8 +65,8 @@ namespace DatagramsNet.Serialization
             var membersInformation = BinaryHelper.GetMembersInformation(datagramInstance!).ToArray();
             var datagramTables = new SubDatagramTable[membersInformation.Length];
 
-            int lastSize = 0;
 
+            int lastSize = 0;
             //TODO: I should simplify this solution
             for (int i = 0; i < membersInformation.Length; i++)
             {

@@ -18,7 +18,11 @@ Parallel.For(0, DatagramCount, async i =>
     {
         keys[j] = $"Key({j})";
     }
-    var datagram = new HandshakePacket(new ShakeMessage() { IdMessage = i, Message = $"{message}", Keys = keys});
+
+    var datagram = new HandshakePacket(new ShakeMessage() { IdMessage = i, Message = $"{message}", Keys = keys })
+    {
+        Key = typeof(HandshakePacket)
+    };
     await DatagramHelper.SendDatagramAsync(async data => await client.SendAsync(data), data: DatagramHelper.WriteDatagram(datagram));
 });
 Console.ReadKey(intercept: true);

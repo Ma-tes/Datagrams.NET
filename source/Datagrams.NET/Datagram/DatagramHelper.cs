@@ -34,7 +34,7 @@ namespace DatagramsNet.Datagram
         public static object SetObjectData(Type datagramType, Memory<byte[]> data)
         {
             var datagram = Activator.CreateInstance(datagramType);
-            //TODO: Serializer.GetMembers
+
             PropertyInfo[] fields = datagram!.GetType().GetProperties();
             for (int i = 0; i < data.Length; i++)
             {

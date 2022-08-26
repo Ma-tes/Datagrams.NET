@@ -5,7 +5,7 @@
     public sealed class MemberInformation
     {
         public object? MemberValue { get; }
-        public Type MemberType { get; }
+        public Type MemberType { get; set; }
 
         public MemberInformation(object? @object, Type memberType)
         {

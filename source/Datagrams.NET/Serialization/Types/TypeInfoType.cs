@@ -9,9 +9,7 @@ namespace DatagramsNet.Serialization.Types
         {
             if (@object.Value is Type newType)
             {
-                var typeName = newType.FullName;
-                var bytes = BinaryHelper.Write(typeName!);
-                var type = BinaryHelper.Read<string>(bytes);
+                var typeName = newType.AssemblyQualifiedName;
                 return BinaryHelper.Write(typeName!);
             }
             throw new Exception($"This object is not type of {nameof(Type)}");

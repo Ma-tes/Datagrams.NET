@@ -18,6 +18,7 @@ namespace DatagramsNet
         public int IdMessage { get; set; }
         public string Message { get; set; } = default!;
         public string[] Keys { get; set; } = new string[] { "One", "Two", "Three"};
+        public byte[] Bytes { get; set; }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]

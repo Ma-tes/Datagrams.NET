@@ -64,6 +64,8 @@ namespace DatagramsNet
 
         public static T Read<T>(byte[] bytes)
         {
+            if (typeof(T) == typeof(byte[]) || typeof(T) == typeof(byte[]))
+                return (T)(object)bytes;
             var currentType = typeof(T) == typeof(Type) ? typeof(TypeInfoType) : typeof(T);
             if (Serializer.TryGetManagedType(currentType, out IManagedSerializer? managedType))
             {
@@ -120,7 +122,7 @@ namespace DatagramsNet
         public static int GetSizeOf<T>(T @object, Type @objectType, ref byte[] bytes)
         {
             int size;
-            if (@object is not null && (objectType.IsClass) && @object is not string && @object.GetType().BaseType != typeof(Array) && @objectType != typeof(Type))
+            if (@object is not null && (objectType.IsClass) && @object is not string && objectType != typeof(string) && (@object.GetType().BaseType != typeof(Array) && objectType.BaseType != typeof(Array)) && @objectType != typeof(Type))
             {
                 var membersInformation = GetMembersInformation(@object!).ToArray();
                 var sizeTable = GetSizeOfClass(membersInformation, bytes);
@@ -147,6 +149,9 @@ namespace DatagramsNet
             {
                 if (!(managedType)) 
                 {
+                    if(member.MemberType == typeof(byte[]))
+                        bytes = memoryBytes.RemoveAtIndexes(sizeof(int), start);
+
                     size = member.MemberType == typeof(Type) ? 4 : Marshal.SizeOf(member.MemberType);
                     return new MemberTableHolder(bytes, size);
                 }
@@ -203,6 +208,8 @@ namespace DatagramsNet
         public static int GetSizeOfArray(Array array, ref byte[] bytes)
         {
             int totalSize = 0;
+            if (array.GetType().GetElementType() == typeof(byte))
+                return array.Length;
             for (int i = 0; i < array.Length; i++)
             {
                 var elementValue = array.GetValue(i);

@@ -67,9 +67,13 @@ namespace DatagramsNet.Serialization
 
 
             int lastSize = 0;
+            int byteArrayCount = 0;
             //TODO: I should simplify this solution
             for (int i = 0; i < membersInformation.Length; i++)
             {
+                if (membersInformation[i].MemberType == typeof(byte[]))
+                    byteArrayCount++;
+
                 spanBytes = spanBytes[lastSize..];
                 byte[] subBytes = spanBytes.ToArray();
                 int size = BinaryHelper.GetSizeOf(membersInformation[i].MemberValue, membersInformation[i].MemberType, ref subBytes);

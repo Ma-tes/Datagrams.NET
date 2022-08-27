@@ -24,8 +24,8 @@ namespace DatagramsNet
         protected virtual async Task CheckConnection(string message = "Client is connected")
         {
             var handShakePacket = new HandshakePacket(new ShakeMessage() { IdMessage = 17, Message = message });
-            var writer = DatagramHelper.WriteDatagram(handShakePacket);
-            await DatagramHelper.SendDatagramAsync(new Func<byte[], Task>(async (byte[] bytes) => await SendAsync(bytes)), writer);
+            //var writer = DatagramHelper.WriteDatagram(handShakePacket);
+            //await DatagramHelper.SendDatagramAsync(new Func<byte[], Task>(async (byte[] bytes) => await SendAsync(bytes)), writer);
         }
     }
 }

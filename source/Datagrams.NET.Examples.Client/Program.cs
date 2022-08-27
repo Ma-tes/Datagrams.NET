@@ -19,7 +19,8 @@ Parallel.For(0, DatagramCount, async i =>
         keys[j] = $"Key({j})";
     }
 
-    var datagram = new HandshakePacket(new ShakeMessage() { IdMessage = i, Message = $"{message}", Keys = keys })
+    var bytes = new byte[] { 255, 16, 128, 32, 64 };
+    var datagram = new HandshakePacket(new ShakeMessage() { IdMessage = i, Message = $"{message}", Keys = keys, Bytes = bytes})
     {
         Key = typeof(HandshakePacket)
     };

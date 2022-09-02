@@ -1,19 +1,29 @@
 ﻿using System.Net;
+using System.Net.Sockets;
 using DatagramsNet.Logging;
 using DatagramsNet.Prefixes;
 
 namespace DatagramsNet.Examples.Server
 {
-    internal sealed class ServerExample : ServerManager
+    internal sealed class ServerExample : SocketServer
     {
         public override int PortNumber => base.PortNumber;
+        public override Socket CurrentSocket { get; set; } =
+            new(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+
         public int handShakeCounter = 0;
 
-        public ServerExample(string name, IPAddress ipAddress) : base(name, ipAddress) 
+        protected override int bufferSize { get; set; } = 4096;
+
+        public ServerExample(IPAddress ipAddress) : base(ipAddress) 
         {
+            CurrentSocket.Bind(EndPoint);
+            CurrentSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.NoDelay, true);
+            //CurrentSocket.Blocking = false;
+            SocketReciever = new SocketReciever(CurrentSocket, bufferSize);
         }
 
-        public override Task OnRecieveAsync(object datagram, EndPoint ipAddress) 
+        public override async Task OnRecieveAsync(object datagram, EndPoint ipAddress) 
         {
             if (datagram is HandshakePacket newDatagram)
             {
@@ -23,8 +33,8 @@ namespace DatagramsNet.Examples.Server
                 {
                     ServerLogger.Log<NormalPrefix>($"Key:[{i}] -> {newDatagram.Message.Keys[i]}", TimeFormat.Half);
                 }
+                await SendToDatagramAsync(datagram, ipAddress);
             }
-            return Task.CompletedTask;
         }
     }
 }

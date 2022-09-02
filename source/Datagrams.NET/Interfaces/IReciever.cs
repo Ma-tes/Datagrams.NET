@@ -4,7 +4,7 @@ namespace DatagramsNet.Interfaces
 {
     public interface IReciever
     {
-        public UdpReciever UdpReciever { get; }
+        public SocketReciever SocketReciever { get; set; }
 
         public virtual Task OnRecieveAsync(object datagram, IPAddress ipAddress)
         {

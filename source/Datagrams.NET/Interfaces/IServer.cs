@@ -3,12 +3,12 @@ using System.Net.Sockets;
 
 namespace DatagramsNet.Interfaces
 {
-    public interface IServer
+    public interface ISocket
     {
         public string Name { get; }
         public IPAddress IPAddress { get; }
-        public Socket ServerSocket { get; }
-        public List<Client> Clients { get; }
+        public Socket CurrentSocket { get; }
+
         public IPEndPoint EndPoint { get; }
 
         public Task<bool> StartServerAsync() => Task.FromResult(false);

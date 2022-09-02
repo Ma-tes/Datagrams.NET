@@ -2,7 +2,8 @@
 using DatagramsNet.Logging.Reading;
 using System.Net;
 
-var server = new ServerExample("ServerExample", IPAddress.Any);
+var server = new ServerExample(IPAddress.Any);
+server.CancellationFunction = () => server.handShakeCounter > 5;
 
 Task.Run(() => server.StartServerAsync());
 ReaderManager.StartReading();

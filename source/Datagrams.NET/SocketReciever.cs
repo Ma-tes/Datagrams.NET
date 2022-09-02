@@ -19,16 +19,20 @@ namespace DatagramsNet
         }
     }
 
-    public sealed class UdpReciever
+    public sealed class SocketReciever
     {
         private readonly Socket _listeningSocket;
+        private bool isCanceled = false;
 
-        public UdpReciever(Socket listeningSocket)
+        public int BufferSize { get; }
+
+        public SocketReciever(Socket listeningSocket, int bufferSize)
         {
             _listeningSocket = listeningSocket;
+            BufferSize = bufferSize;
         }
 
-        public async Task<bool> StartRecievingAsync(Func<object, EndPoint, Task> datagramAction, Func<Task<ClientDatagram>> clientData, bool consoleWriter = true)
+        public async Task<bool> StartRecievingAsync(Func<object, EndPoint, Task> datagramAction, Func<Task<ClientDatagram>> clientData, Func<bool> cancelFunction, bool consoleWriter = true)
         {
             if (consoleWriter)
             {
@@ -37,6 +41,13 @@ namespace DatagramsNet
 
             while (true)
             {
+                if (cancelFunction.Invoke()) 
+                {
+                    isCanceled = true;
+                    _listeningSocket.Close();
+                    return false;
+                }
+
                 var data = await clientData();
                 Type dataType = DatagramHelper.GetBaseDatagramType(data.Datagram[0], typeof(PacketAttribute));
 
@@ -50,12 +61,14 @@ namespace DatagramsNet
 
         public async Task<ClientDatagram> GetDatagramDataAsync()
         {
-            Memory<byte> datagramMemory = new byte[4096];
+            Memory<byte> datagramMemory = new byte[BufferSize];
             EndPoint currentEndPoint = (EndPoint)new IPEndPoint(IPAddress.Any, 0);
-            var dataTask = await _listeningSocket.ReceiveFromAsync(datagramMemory, SocketFlags.None, currentEndPoint);
 
-            SocketReceiveFromResult result = dataTask;
-            return new ClientDatagram() { Client = (IPEndPoint)result.RemoteEndPoint, Datagram = datagramMemory.Span.ToArray() };
+            if (isCanceled)
+                return default;
+
+            SocketReceiveFromResult finalData = await _listeningSocket.ReceiveFromAsync(datagramMemory, SocketFlags.None, currentEndPoint);
+            return new ClientDatagram() { Client = (IPEndPoint)finalData.RemoteEndPoint, Datagram = datagramMemory.Span.ToArray() };
         }
     }
 }

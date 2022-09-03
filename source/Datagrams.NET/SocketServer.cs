@@ -22,21 +22,31 @@ namespace DatagramsNet
 
         public SocketServer(IPAddress address) : base(address) 
         {
+            SocketReciever = new SocketReciever(CurrentSocket, bufferSize);
         }
 
-        public static SocketServer CreateServer(ProtocolType protocol, Func<object, EndPoint, Task> recieveFunction, IPAddress address, int totalBufferSize = 4096) 
+        public static SocketServer CreateServer(ProtocolType protocol, Func<object, EndPoint, Task> recieveFunction, IPEndPoint endPoint, int totalBufferSize = 128000) 
         {
-            var newSocketServer = new SocketCreator(recieveFunction, address) 
+            var newSocketServer = new SocketCreator(recieveFunction, endPoint) 
             {
                 bufferSize = totalBufferSize
             };
-            var socketType = protocol == ProtocolType.Udp ? SocketType.Dgram : SocketType.Stream;
-
-            newSocketServer.CurrentSocket = new Socket(AddressFamily.InterNetwork, socketType, protocol);
-            newSocketServer.CurrentSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, true);
+            newSocketServer.CurrentSocket = CreateSocket(protocol);
             newSocketServer.CurrentSocket.Bind(newSocketServer.EndPoint);
 
+            Task.Run(() => newSocketServer.StartServerAsync());
             return newSocketServer;
+        }
+
+        protected static Socket CreateSocket(ProtocolType protocol) 
+        {
+            var socketType = protocol == ProtocolType.Udp ? SocketType.Dgram : SocketType.Stream;
+            var socketOption = protocol == ProtocolType.Udp ? SocketOptionName.Broadcast : SocketOptionName.NoDelay;
+
+            var newSocket = new Socket(AddressFamily.InterNetwork, socketType, protocol);
+            newSocket.SetSocketOption(SocketOptionLevel.Socket, socketOption, true);
+
+            return newSocket;
         }
 
         public async Task SendDatagramAsync(object datagram) =>
@@ -45,7 +55,8 @@ namespace DatagramsNet
         public async Task SendToDatagramAsync(object datagram, EndPoint destination)
         {
             var serializedData = DatagramHelper.WriteDatagram(datagram);
-            await DatagramHelper.SendDatagramAsync(async data => await this.CurrentSocket.SendToAsync(data, SocketFlags.None, destination), serializedData);
+
+            await DatagramHelper.SendDatagramAsync(async data => await CurrentSocket.SendToAsync(data, SocketFlags.None, destination), serializedData);
         }
 
         protected override Task<ClientDatagram> StartRecievingAsync()
@@ -62,9 +73,16 @@ namespace DatagramsNet
 
             private Func<object, EndPoint, Task> _recieveFunction;
 
-            public SocketCreator(Func<object, EndPoint, Task> recieveFunction, IPAddress address) : base(address) 
+            public SocketCreator(Func<object, EndPoint, Task> recieveFunction, IPEndPoint endPoint) : base(endPoint.Address) 
             {
                 _recieveFunction = recieveFunction;
+                EndPoint = endPoint;
+            }
+
+            public SocketCreator(Func<object, EndPoint, Task> recieveFunction, IPAddress address, int port) : base(address) 
+            {
+                _recieveFunction = recieveFunction;
+                EndPoint = new IPEndPoint(address, port);
             }
 
             public override async Task OnRecieveAsync(object datagram, EndPoint ipAddress)

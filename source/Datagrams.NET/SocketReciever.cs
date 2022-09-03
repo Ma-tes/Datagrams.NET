@@ -59,7 +59,7 @@ namespace DatagramsNet
             }
         }
 
-        public async Task<ClientDatagram> GetDatagramDataAsync()
+        public async Task<ClientDatagram> GetDatagramDataAsync(Socket currentSocket)
         {
             Memory<byte> datagramMemory = new byte[BufferSize];
             EndPoint currentEndPoint = (EndPoint)new IPEndPoint(IPAddress.Any, 0);
@@ -67,7 +67,7 @@ namespace DatagramsNet
             if (isCanceled)
                 return default;
 
-            SocketReceiveFromResult finalData = await _listeningSocket.ReceiveFromAsync(datagramMemory, SocketFlags.None, currentEndPoint);
+            SocketReceiveFromResult finalData = await currentSocket.ReceiveFromAsync(datagramMemory, SocketFlags.None, currentEndPoint);
             return new ClientDatagram() { Client = (IPEndPoint)finalData.RemoteEndPoint, Datagram = datagramMemory.Span.ToArray() };
         }
     }

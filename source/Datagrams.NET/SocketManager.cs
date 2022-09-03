@@ -23,11 +23,13 @@ namespace DatagramsNet
         public virtual int PortNumber => 1111;
         public virtual Func<bool> CancellationFunction { get; set; } = () => false;
 
-        public IPEndPoint EndPoint { get; }
+        public IPEndPoint EndPoint { get; set; }
 
         public SocketReciever SocketReciever { get; set; }
 
         protected abstract int bufferSize { get; set; }
+
+        public Socket RecieveSocketHandler { get; protected set; }
 
         public SocketManager(IPAddress ipAddress) 
         {
@@ -43,11 +45,19 @@ namespace DatagramsNet
 
         protected virtual async Task<ClientDatagram> StartRecievingAsync()
         {
-            return await SocketReciever.GetDatagramDataAsync();
+            return await SocketReciever.GetDatagramDataAsync(RecieveSocketHandler);
         }
 
         public async Task<bool> StartServerAsync()
         {
+            if (CurrentSocket.ProtocolType == ProtocolType.Tcp)
+            {
+                CurrentSocket.Listen();
+                RecieveSocketHandler = Task.Run(() => CurrentSocket.AcceptAsync()).Result;
+            }
+            else
+                RecieveSocketHandler = CurrentSocket;
+
             await SocketReciever.StartRecievingAsync(OnRecieveAsync, StartRecievingAsync, CancellationFunction);
             return false;
         }

@@ -5,19 +5,21 @@ using System.Net;
 
 const int DatagramCount = 100;
 const int Port = 1111;
+int recievedPackets = 0;
 
 Console.Write("Target IP address (empty for local): ");
 string? ipAddress = Console.ReadLine();
 IPAddress ip = string.IsNullOrWhiteSpace(ipAddress) ? IPAddress.Loopback : IPAddress.Parse(ipAddress);
 var destination = new IPEndPoint(ip, Port);
 
-var client = SocketServer.CreateServer(System.Net.Sockets.ProtocolType.Tcp, async(object datagram, EndPoint endPoint) =>
+var client = SocketServer.CreateServer(System.Net.Sockets.ProtocolType.Udp, async(object datagram, EndPoint endPoint) =>
 {
     if (datagram is HandshakePacket newDatagram) 
     {
-        await ServerLogger.LogAsync<NormalPrefix>($"You recieved message from {endPoint.AddressFamily}", TimeFormat.Half);
+        recievedPackets++;
+        await ServerLogger.LogAsync<NormalPrefix>($"[{recievedPackets}] You recieved message from {endPoint.AddressFamily}", TimeFormat.Half);
     }
-}, IPAddress.Any);
+}, new IPEndPoint(IPAddress.Any, 0));
 Task.Run(() => client.CurrentSocket.ConnectAsync(destination));
 
 Parallel.For(0, DatagramCount, async i =>

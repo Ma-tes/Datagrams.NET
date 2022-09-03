@@ -9,18 +9,15 @@ namespace DatagramsNet.Examples.Server
     {
         public override int PortNumber => base.PortNumber;
         public override Socket CurrentSocket { get; set; } =
-            new(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            new(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 
         public int handShakeCounter = 0;
 
-        protected override int bufferSize { get; set; } = 4096;
+        protected override int bufferSize { get; set; } = 40960;
 
         public ServerExample(IPAddress ipAddress) : base(ipAddress) 
         {
             CurrentSocket.Bind(EndPoint);
-            CurrentSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.NoDelay, true);
-            //CurrentSocket.Blocking = false;
-            SocketReciever = new SocketReciever(CurrentSocket, bufferSize);
         }
 
         public override async Task OnRecieveAsync(object datagram, EndPoint ipAddress) 

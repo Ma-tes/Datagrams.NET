@@ -18,6 +18,7 @@ namespace DatagramsNet.Examples.Server
         public ServerExample(IPAddress ipAddress) : base(ipAddress) 
         {
             CurrentSocket.Bind(EndPoint);
+            SocketReciever = new SocketReciever(CurrentSocket, bufferSize);
         }
 
         public override async Task OnRecieveAsync(object datagram, EndPoint ipAddress) 

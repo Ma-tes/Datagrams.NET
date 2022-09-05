@@ -22,7 +22,6 @@ namespace DatagramsNet
 
         public SocketServer(IPAddress address) : base(address) 
         {
-            SocketReciever = new SocketReciever(CurrentSocket, bufferSize);
         }
 
         public static SocketServer CreateServer(ProtocolType protocol, Func<object, EndPoint, Task> recieveFunction, IPEndPoint endPoint, int totalBufferSize = 128000) 
@@ -49,13 +48,15 @@ namespace DatagramsNet
             return newSocket;
         }
 
-        public async Task SendDatagramAsync(object datagram) =>
-            await SendToDatagramAsync(datagram, new IPEndPoint(IPAddress.Any, 0));
+        public async Task SendDatagramAsync(object datagram) 
+        {
+            var serializedData = DatagramHelper.WriteDatagram(datagram);
+            await DatagramHelper.SendDatagramAsync(async data => await CurrentSocket.SendAsync(data, SocketFlags.None), serializedData);
+        }
 
         public async Task SendToDatagramAsync(object datagram, EndPoint destination)
         {
             var serializedData = DatagramHelper.WriteDatagram(datagram);
-
             await DatagramHelper.SendDatagramAsync(async data => await CurrentSocket.SendToAsync(data, SocketFlags.None, destination), serializedData);
         }
 
